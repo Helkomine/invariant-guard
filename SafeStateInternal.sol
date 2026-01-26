@@ -226,7 +226,7 @@ abstract contract SafeStateInternal {
             assembly {
                 errorAccumulator := add(errorAccumulator, valueMismatch)
             }
-            errorArray[i] = ValuePerPosition(beforeValueArray[i], uint256(afterValueArray[i]), expectedDeltaArray[i]);
+            errorArray[i] = ValuePerPosition(beforeValueArray[i], afterValueArray[i], expectedDeltaArray[i]);
             unchecked { ++i; }
         }
         return (errorAccumulator, errorArray);
@@ -459,3 +459,4 @@ abstract contract SafeStateInternal {
 */
 
 }
+
