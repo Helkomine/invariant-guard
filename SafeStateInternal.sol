@@ -190,7 +190,7 @@ abstract contract SafeStateInternal {
 
     // ------------------------------ STORAGE -------------------------------
 
-    function _getNumPositions(bytes32[] storage positions) private view returns (uint256) {
+    function _getNumStoragePositions(bytes32[] storage positions) private view returns (uint256) {
         return positions.length;
     }
     
@@ -199,7 +199,7 @@ abstract contract SafeStateInternal {
     }  
 
     function _getStorageArray(bytes32[] storage positions) private view returns (uint256[] memory) {
-        uint256 numPositions = _getNumPositions(positions);
+        uint256 numPositions = _getNumStoragePositions(positions);
         _revertIfArrayTooLarge(numPositions);
         uint256[] memory valueArray = new uint256[](numPositions);
         for (uint256 i = 0; i < numPositions; ) {
@@ -322,10 +322,8 @@ abstract contract SafeStateInternal {
         _processMinDecreaseStorage(beforeValueArray, afterValueArray, minDecreaseArray);
     }  
 
-/*
-// TRANSIENT STORAGE  
-    
-    function _getNumPositions(bytes32[] storage positions) private view returns (uint256) {
+// ------------------- TRANSIENT STORAGE ------------------------------                    
+    function _getNumTransientStoragePositions(bytes32[] memory positions) private view returns (uint256) {
         return positions.length;
     }
     
@@ -333,133 +331,109 @@ abstract contract SafeStateInternal {
         if (numPositions > MAX_PROTECTED_SLOTS) revert ArrayTooLarge(numPositions, MAX_PROTECTED_SLOTS);
     }  
 
-    function _getStorageArray(bytes32[] storage positions) private view returns (bytes32[] memory) {
-        uint256 numPositions = _getNumPositions(positions);
+    function _getTransientStorageArray(bytes32[] memory positions) private view returns (uint256[] memory) {
+        uint256 numPositions = _getNumTransientStoragePositions(positions);
         _revertIfArrayTooLarge(numPositions);
-        bytes32[] memory valueArray = new bytes32[](numPositions);
+        uint256[] memory valueArray = new uint256[](numPositions);
         for (uint256 i = 0; i < numPositions; ) {
             bytes32 slot = positions[i];
-            bytes32 slotValue;
+            uint256 slotValue;
             assembly {
-                slotValue := sload(slot)
+                slotValue := tload(slot)
             }
             valueArray[i] = slotValue;
             unchecked { ++i; }
         }
         return valueArray;
     }    
-    
-    function _processArray(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory expectedDeltaArray, ValidateSelector selector) private pure returns (uint256, ValuePerPosition[] memory) {
-        uint256 length = expectedDeltaArray.length;
-        _revertIfArrayTooLarge(length);
-        if (beforeValueArray.length != length || afterValueArray.length != length) revert LengthMismatch();
-        bool valueMismatch;       
-        uint256 errorAccumulator;
-        ValuePerPosition[] memory errorArray = new ValuePerPosition[](length);
-        for (uint256 i = 0 ; i < length ; ) {            
-            valueMismatch = _processInvariance(beforeValueArray[i], afterValueArray[i], expectedDeltaArray[i], selector);
-            assembly {
-                errorAccumulator := add(errorAccumulator, valueMismatch)
-            }
-            errorArray[i] = ValuePerPosition(beforeValueArray[i], uint256(afterValueArray[i]), expectedDeltaArray[i]);
-            unchecked { ++i; }
-        }
-        return (errorAccumulator, errorArray);
-    }        
-   
-    function _processExpectedInvariantStorage(bytes32[] memory beforeValueArray, bytes32[] memory afterValueArray) private pure {
+               
+    function _processExpectedInvariantTransientStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray) private pure {
         (uint256 errorAccumulator, ValuePerPosition[] memory errorArray) = _processArray(beforeValueArray, afterValueArray, new uint256[](beforeValueArray.length), ValidateSelector.IS_CONSTANT_VALUE_AND_DELTA_EQUAL);
-        if (errorAccumulator > 0) revert InvariantViolationStorage(errorArray); 
+        if (errorAccumulator > 0) revert InvariantViolationTransientStorage(errorArray); 
     }
 
-    function _processExactIncreaseStorage(bytes32[] memory beforeValueArray, bytes32[] memory afterValueArray, uint256[] memory exactIncreaseArray) private pure {
+    function _processExactIncreaseTransientStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory exactIncreaseArray) private pure {
         (uint256 errorAccumulator, ValuePerPosition[] memory errorArray) = _processArray(beforeValueArray, afterValueArray, exactIncreaseArray, ValidateSelector.IS_INCREASE_VALUE_AND_DELTA_EQUAL);
-        if (errorAccumulator > 0) revert InvariantViolationStorage(errorArray);
+        if (errorAccumulator > 0) revert InvariantViolationTransientStorage(errorArray);
     }
 
-    function _processExactDecreaseStorage(bytes32[] memory beforeValueArray, bytes32[] memory afterValueArray, uint256[] memory exactDecreaseArray) private pure {
+    function _processExactDecreaseTransientStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory exactDecreaseArray) private pure {
         (uint256 errorAccumulator, ValuePerPosition[] memory errorArray) = _processArray(beforeValueArray, afterValueArray, exactDecreaseArray, ValidateSelector.IS_DECREASE_VALUE_AND_DELTA_EQUAL);
-        if (errorAccumulator > 0) revert InvariantViolationStorage(errorArray);
+        if (errorAccumulator > 0) revert InvariantViolationTransientStorage(errorArray);
     }
 
-    function _processMaxIncreaseStorage(bytes32[] memory beforeValueArray, bytes32[] memory afterValueArray, uint256[] memory maxIncreaseArray) private pure {
+    function _processMaxIncreaseTransientStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory maxIncreaseArray) private pure {
         (uint256 errorAccumulator, ValuePerPosition[] memory errorArray) = _processArray(beforeValueArray, afterValueArray, maxIncreaseArray, ValidateSelector.IS_INCREASE_VALUE_AND_DELTA_LESS_THAN_OR_EQUAL);
-        if (errorAccumulator > 0) revert InvariantViolationStorage(errorArray);
+        if (errorAccumulator > 0) revert InvariantViolationTransientStorage(errorArray);
     }
 
-    function _processMinIncreaseStorage(bytes32[] memory beforeValueArray, bytes32[] memory afterValueArray, uint256[] memory minIncreaseArray) private pure {
+    function _processMinIncreaseTransientStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory minIncreaseArray) private pure {
         (uint256 errorAccumulator, ValuePerPosition[] memory errorArray) = _processArray(beforeValueArray, afterValueArray, minIncreaseArray, ValidateSelector.IS_INCREASE_VALUE_AND_DELTA_GREATER_THAN_OR_EQUAL);
-        if (errorAccumulator > 0) revert InvariantViolationStorage(errorArray);
+        if (errorAccumulator > 0) revert InvariantViolationTransientStorage(errorArray);
     }
 
-    function _processMaxDecreaseStorage(bytes32[] memory beforeValueArray, bytes32[] memory afterValueArray, uint256[] memory maxDecreaseArray) private pure {
+    function _processMaxDecreaseTransientStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory maxDecreaseArray) private pure {
         (uint256 errorAccumulator, ValuePerPosition[] memory errorArray) = _processArray(beforeValueArray, afterValueArray, maxDecreaseArray, ValidateSelector.IS_DECREASE_VALUE_AND_DELTA_LESS_THAN_OR_EQUAL);
-        if (errorAccumulator > 0) revert InvariantViolationStorage(errorArray);
+        if (errorAccumulator > 0) revert InvariantViolationTransientStorage(errorArray);
     }
 
-    function _processMinDecreaseStorage(bytes32[] memory beforeValueArray, bytes32[] memory afterValueArray, uint256[] memory minDecreaseArray) private pure {
+    function _processMinDecreaseTransientStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory minDecreaseArray) private pure {
         (uint256 errorAccumulator, ValuePerPosition[] memory errorArray) = _processArray(beforeValueArray, afterValueArray, minDecreaseArray, ValidateSelector.IS_DECREASE_VALUE_AND_DELTA_GREATER_THAN_OR_EQUAL);
-        if (errorAccumulator > 0) revert InvariantViolationStorage(errorArray);
-    }
-   
-    modifier invariantStorage(bytes32[] storage positions) {
-        bytes32[] memory beforeValueArray = _getStorageArray(positions);
-        _;
-        bytes32[] memory afterValueArray = _getStorageArray(positions);
-        _processExpectedInvariantStorage(beforeValueArray, afterValueArray);
+        if (errorAccumulator > 0) revert InvariantViolationTransientStorage(errorArray);
     }
 
-    modifier expectedInvariantStorage(bytes32[] storage positions, uint256[] memory expectedInvariantArray) {
+    modifier invariantTransientStorage(bytes32[] storage positions) {
+        uint256[] memory beforeValueArray = _getStorageArray(positions);
         _;
-        bytes32[] memory actualStorageArray = _getStorageArray(positions);
-        _processExpectedInvariantStorage(expectedInvariantArray, actualStorageArray);
-    }
-    
-    modifier exactIncreaseStorage(bytes32[] storage positions, bytes32[] memory exactIncreases) {
-        bytes32[] memory beforeValueArray = _getStorageArray(positions);
-        _;
-        bytes32[] memory afterValueArray = _getStorageArray(positions);
-        _processExactIncreaseStorage(beforeValueArray, afterValueArray);
+        uint256[] memory afterValueArray = _getStorageArray(positions);
+        _processExpectedInvariantTransientStorage(beforeValueArray, afterValueArray);
     }
 
-    modifier exactDecreaseStorage(bytes32[] storage positions, uint256[] memory exactIncreases) {
-        bytes32[] memory beforeValueArray = _getStorageArray(positions);
+    modifier expectedInvariantTransientStorage(bytes32[] storage positions, uint256[] memory expectedInvariantArray) {
         _;
-        bytes32[] memory afterValueArray = _getStorageArray(positions);
-        _processExactDecreaseStorage();
+        uint256[] memory actualStorageArray = _getStorageArray(positions);
+        _processExpectedInvariantTransientStorage(expectedInvariantArray, actualStorageArray);
     }
     
-    modifier maxIncreaseStorage(bytes32[] storage positions, uint256[] memory exactIncreases) {
-        bytes32[] memory beforeValueArray = _getStorageArray(positions);
+    modifier exactIncreaseTransientStorage(bytes32[] storage positions, uint256[] memory exactIncreaseArray) {
+        uint256[] memory beforeValueArray = _getStorageArray(positions);
         _;
-        bytes32[] memory afterValueArray = _getStorageArray(positions);
-        _processMaxIncreaseStorage();
+        uint256[] memory afterValueArray = _getStorageArray(positions);
+        _processExactIncreaseTransientStorage(beforeValueArray, afterValueArray, exactIncreaseArray);
     }
-    
-    modifier minIncreaseStorage(bytes32[] storage positions, uint256[] memory exactIncreases) {
-        bytes32[] memory beforeValueArray = _getStorageArray(positions);
-        _;
-        bytes32[] memory afterValueArray = _getStorageArray(positions);
-        _processMinIncreaseStorage();
-    }
-    
-    modifier maxDecreaseStorage(bytes32[] storage positions, uint256[] memory exactIncreases) {
-        bytes32[] memory beforeValueArray = _getStorageArray(positions);
-        _;
-        bytes32[] memory afterValueArray = _getStorageArray(positions);
-        _processMaxDecreaseStorage();
-    }
-    
-    modifier minDecreaseStorage(bytes32[] storage positions, uint256[] memory exactIncreases) {
-        bytes32[] memory beforeValueArray = _getStorageArray(positions);
-        _;
-        bytes32[] memory afterValueArray = _getStorageArray(positions);
-        _processMinDecreaseStorage();
-    }
-*/
 
+    modifier exactDecreaseTransientStorage(bytes32[] storage positions, uint256[] memory exactDecreaseArray) {
+        uint256[] memory beforeValueArray = _getStorageArray(positions);
+        _;
+        uint256[] memory afterValueArray = _getStorageArray(positions);
+        _processExactDecreaseTransientStorage(beforeValueArray, afterValueArray, exactDecreaseArray);
+    }
+    
+    modifier maxIncreaseTransientStorage(bytes32[] storage positions, uint256[] memory maxIncreaseArray) {
+        uint256[] memory beforeValueArray = _getStorageArray(positions);
+        _;
+        uint256[] memory afterValueArray = _getStorageArray(positions);
+        _processMaxIncreaseTransientStorage(beforeValueArray, afterValueArray, maxIncreaseArray);
+    }
+    
+    modifier minIncreaseTransientStorage(bytes32[] storage positions, uint256[] memory minIncreaseArray) {
+        uint256[] memory beforeValueArray = _getStorageArray(positions);
+        _;
+        uint256[] memory afterValueArray = _getStorageArray(positions);
+        _processMinIncreaseTransientStorage(beforeValueArray, afterValueArray, minIncreaseArray);
+    }
+    
+    modifier maxDecreaseTransientStorage(bytes32[] storage positions, uint256[] memory maxDecreaseArray) {
+        uint256[] memory beforeValueArray = _getStorageArray(positions);
+        _;
+        uint256[] memory afterValueArray = _getStorageArray(positions);
+        _processMaxDecreaseTransientStorage(beforeValueArray, afterValueArray, maxDecreaseArray);
+    }
+    
+    modifier minDecreaseTransientStorage(bytes32[] storage positions, uint256[] memory minDecreaseArray) {
+        uint256[] memory beforeValueArray = _getStorageArray(positions);
+        _;
+        uint256[] memory afterValueArray = _getStorageArray(positions);
+        _processMinDecreaseTransientStorage(beforeValueArray, afterValueArray, minDecreaseArray);
+    }  
 }
-
-
-
-
