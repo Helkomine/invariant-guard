@@ -232,37 +232,37 @@ abstract contract SafeStateInternal {
         return (errorAccumulator, errorArray);
     }        
    
-    function _processExpectedInvariantStorage(bytes32[] memory beforeValueArray, bytes32[] memory afterValueArray) private pure {
+    function _processExpectedInvariantStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray) private pure {
         (uint256 errorAccumulator, ValuePerPosition[] memory errorArray) = _processArray(beforeValueArray, afterValueArray, new uint256[](beforeValueArray.length), ValidateSelector.IS_CONSTANT_VALUE_AND_DELTA_EQUAL);
         if (errorAccumulator > 0) revert InvariantViolationStorage(errorArray); 
     }
 
-    function _processExactIncreaseStorage(bytes32[] memory beforeValueArray, bytes32[] memory afterValueArray, uint256[] memory exactIncreaseArray) private pure {
+    function _processExactIncreaseStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory exactIncreaseArray) private pure {
         (uint256 errorAccumulator, ValuePerPosition[] memory errorArray) = _processArray(beforeValueArray, afterValueArray, exactIncreaseArray, ValidateSelector.IS_INCREASE_VALUE_AND_DELTA_EQUAL);
         if (errorAccumulator > 0) revert InvariantViolationStorage(errorArray);
     }
 
-    function _processExactDecreaseStorage(bytes32[] memory beforeValueArray, bytes32[] memory afterValueArray, uint256[] memory exactDecreaseArray) private pure {
+    function _processExactDecreaseStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory exactDecreaseArray) private pure {
         (uint256 errorAccumulator, ValuePerPosition[] memory errorArray) = _processArray(beforeValueArray, afterValueArray, exactDecreaseArray, ValidateSelector.IS_DECREASE_VALUE_AND_DELTA_EQUAL);
         if (errorAccumulator > 0) revert InvariantViolationStorage(errorArray);
     }
 
-    function _processMaxIncreaseStorage(bytes32[] memory beforeValueArray, bytes32[] memory afterValueArray, uint256[] memory maxIncreaseArray) private pure {
+    function _processMaxIncreaseStorage(uint256[] memory beforeValueArray, uint25[] memory afterValueArray, uint256[] memory maxIncreaseArray) private pure {
         (uint256 errorAccumulator, ValuePerPosition[] memory errorArray) = _processArray(beforeValueArray, afterValueArray, maxIncreaseArray, ValidateSelector.IS_INCREASE_VALUE_AND_DELTA_LESS_THAN_OR_EQUAL);
         if (errorAccumulator > 0) revert InvariantViolationStorage(errorArray);
     }
 
-    function _processMinIncreaseStorage(bytes32[] memory beforeValueArray, bytes32[] memory afterValueArray, uint256[] memory minIncreaseArray) private pure {
+    function _processMinIncreaseStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory minIncreaseArray) private pure {
         (uint256 errorAccumulator, ValuePerPosition[] memory errorArray) = _processArray(beforeValueArray, afterValueArray, minIncreaseArray, ValidateSelector.IS_INCREASE_VALUE_AND_DELTA_GREATER_THAN_OR_EQUAL);
         if (errorAccumulator > 0) revert InvariantViolationStorage(errorArray);
     }
 
-    function _processMaxDecreaseStorage(bytes32[] memory beforeValueArray, bytes32[] memory afterValueArray, uint256[] memory maxDecreaseArray) private pure {
+    function _processMaxDecreaseStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory maxDecreaseArray) private pure {
         (uint256 errorAccumulator, ValuePerPosition[] memory errorArray) = _processArray(beforeValueArray, afterValueArray, maxDecreaseArray, ValidateSelector.IS_DECREASE_VALUE_AND_DELTA_LESS_THAN_OR_EQUAL);
         if (errorAccumulator > 0) revert InvariantViolationStorage(errorArray);
     }
 
-    function _processMinDecreaseStorage(bytes32[] memory beforeValueArray, bytes32[] memory afterValueArray, uint256[] memory minDecreaseArray) private pure {
+    function _processMinDecreaseStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory minDecreaseArray) private pure {
         (uint256 errorAccumulator, ValuePerPosition[] memory errorArray) = _processArray(beforeValueArray, afterValueArray, minDecreaseArray, ValidateSelector.IS_DECREASE_VALUE_AND_DELTA_GREATER_THAN_OR_EQUAL);
         if (errorAccumulator > 0) revert InvariantViolationStorage(errorArray);
     }
@@ -315,7 +315,7 @@ abstract contract SafeStateInternal {
         _processMaxDecreaseStorage();
     }
     
-    modifier minDecreaseStorage(bytes32[] storage positions, uint256[] memory exactIncreases) {
+    modifier minDecreaseStorage(bytes32[] storage positions, uint256[] memory minDecreaseArray) {
         bytes32[] memory beforeValueArray = _getStorageArray(positions);
         _;
         bytes32[] memory afterValueArray = _getStorageArray(positions);
@@ -459,4 +459,5 @@ abstract contract SafeStateInternal {
 */
 
 }
+
 
