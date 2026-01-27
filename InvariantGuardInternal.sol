@@ -81,58 +81,70 @@ abstract contract InvariantGuardInternal {
         return address(this).balance;
     }
 
-    function _processInvariance(uint256 beforeValue, uint256 afterValue, uint256 expectedDelta, DeltaRule selector) private pure returns (bool) {
+    function _validateDeltaRule(uint256 beforeValue, uint256 afterValue, uint256 expectedDelta, DeltaRule selector) private pure returns (bool) {
         if (selector == DeltaRule.CONSTANT) {
             return beforeValue == afterValue;
         } else if (selector == DeltaRule.INCREASE_EXACT) {
-            uint256 delta = afterValue - beforeValue;
-            return delta == expectedDelta;
+            if (afterValue < beforeValue) return false;
+            unchecked {
+                return afterValue - beforeValue == expectedDelta;
+            }
         } else if (selector == DeltaRule.DECREASE_EXACT) {
-            uint256 delta = beforeValue - afterValue;
-            return delta == expectedDelta;
+            if (beforeValue < afterValue) return false;
+            unchecked {
+                return beforeValue - afterValue == expectedDelta;
+            }
         } else if (selector == DeltaRule.INCREASE_MAX) {
-            uint256 delta = afterValue - beforeValue;
-            return delta <= expectedDelta;
+            if (afterValue < beforeValue) return false;
+            unchecked {
+                return afterValue - beforeValue <= expectedDelta;
+            }
         } else if (selector == DeltaRule.INCREASE_MIN) {
-            uint256 delta = afterValue - beforeValue;
-            return delta >= expectedDelta;
+            if (afterValue < beforeValue) return false;
+            unchecked {
+                return afterValue - beforeValue >= expectedDelta;
+            }
         } else if (selector == DeltaRule.DECREASE_MAX) {
-            uint256 delta = beforeValue - afterValue;
-            return delta <= expectedDelta;
+            if (beforeValue < afterValue) return false;
+            unchecked {
+                return beforeValue - afterValue <= expectedDelta;
+            }
         } else if (selector == DeltaRule.DECREASE_MIN) {
-            uint256 delta = beforeValue - afterValue;
-            return delta >= expectedDelta;     
+            if (beforeValue < afterValue) return false;
+            unchecked {
+                return beforeValue - afterValue >= expectedDelta;
+            }     
         } else {
             revert WrongErrorConfiguration(selector);
         }
     }
 
     function _validateDeltaBalance(uint256 beforeBalance, uint256 afterBalance) private pure {
-        if (!_processInvariance(beforeBalance, afterBalance, 0, DeltaRule.CONSTANT)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, 0));
+        if (!_validateDeltaRule(beforeBalance, afterBalance, 0, DeltaRule.CONSTANT)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, 0));
     }
 
     function _processExactIncreaseBalance(uint256 beforeBalance, uint256 afterBalance, uint256 exactIncrease) private pure {
-        if (!_processInvariance(beforeBalance, afterBalance, exactIncrease, DeltaRule.INCREASE_EXACT)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, exactIncrease));   
+        if (!_validateDeltaRule(beforeBalance, afterBalance, exactIncrease, DeltaRule.INCREASE_EXACT)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, exactIncrease));   
     }
 
     function _processExactDecreaseBalance(uint256 beforeBalance, uint256 afterBalance, uint256 exactDecrease) private pure {
-        if (!_processInvariance(beforeBalance, afterBalance, exactDecrease, DeltaRule.DECREASE_EXACT)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, exactDecrease));   
+        if (!_validateDeltaRule(beforeBalance, afterBalance, exactDecrease, DeltaRule.DECREASE_EXACT)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, exactDecrease));   
     }
 
     function _processMaxIncreaseBalance(uint256 beforeBalance, uint256 afterBalance, uint256 maxIncrease) private pure {       
-        if (!_processInvariance(beforeBalance, afterBalance, maxIncrease, DeltaRule.INCREASE_MAX)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, maxIncrease));   
+        if (!_validateDeltaRule(beforeBalance, afterBalance, maxIncrease, DeltaRule.INCREASE_MAX)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, maxIncrease));   
     }
 
     function _processMinIncreaseBalance(uint256 beforeBalance, uint256 afterBalance, uint256 minIncrease) private pure {     
-        if (!_processInvariance(beforeBalance, afterBalance, minIncrease, DeltaRule.INCREASE_MIN)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, minIncrease));      
+        if (!_validateDeltaRule(beforeBalance, afterBalance, minIncrease, DeltaRule.INCREASE_MIN)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, minIncrease));      
     }
 
     function _processMaxDecreaseBalance(uint256 beforeBalance, uint256 afterBalance, uint256 maxDecrease) private pure {             
-        if (!_processInvariance(beforeBalance, afterBalance, maxDecrease, DeltaRule.DECREASE_MAX)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, maxDecrease));
+        if (!_validateDeltaRule(beforeBalance, afterBalance, maxDecrease, DeltaRule.DECREASE_MAX)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, maxDecrease));
     }
 
-    function _processMinDecreaseBalance(uint256 beforeBalance, uint256 afterBalance, uint256 minIncrease) private pure {
-        if (!_processInvariance(beforeBalance, afterBalance, minIncrease, DeltaRule.DECREASE_MIN)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, minIncrease));
+    function _processMinDecreaseBalance(uint256 beforeBalance, uint256 afterBalance, uint256 minDecrease) private pure {
+        if (!_validateDeltaRule(beforeBalance, afterBalance, minDecrease, DeltaRule.DECREASE_MIN)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, minIncrease));
     }
 
     modifier invariantBalance() {
@@ -223,7 +235,7 @@ abstract contract InvariantGuardInternal {
         uint256 errorAccumulator;
         ValuePerPosition[] memory errorArray = new ValuePerPosition[](length);
         for (uint256 i = 0 ; i < length ; ) {            
-            valueMismatch = _processInvariance(beforeValueArray[i], afterValueArray[i], expectedDeltaArray[i], selector);
+            valueMismatch = _validateDeltaRule(beforeValueArray[i], afterValueArray[i], expectedDeltaArray[i], selector);
             assembly {
                 errorAccumulator := add(errorAccumulator, valueMismatch)
             }
@@ -434,3 +446,4 @@ abstract contract InvariantGuardInternal {
         _processMinDecreaseTransientStorage(beforeValueArray, afterValueArray, minDecreaseArray);
     }  
 }
+
