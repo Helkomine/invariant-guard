@@ -119,7 +119,7 @@ abstract contract InvariantGuardInternal {
         }
     }
 
-    function _validateDeltaBalance(uint256 beforeBalance, uint256 afterBalance) private pure {
+    function _processConstantBalance(uint256 beforeBalance, uint256 afterBalance) private pure {
         if (!_validateDeltaRule(beforeBalance, afterBalance, 0, DeltaRule.CONSTANT)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, 0));
     }
 
@@ -151,13 +151,13 @@ abstract contract InvariantGuardInternal {
         uint256 beforeBalance = _getBalance();
         _;
         uint256 afterBalance = _getBalance();
-        _validateDeltaBalance(beforeBalance, afterBalance);
+        _processConstantBalance(beforeBalance, afterBalance);
     }
 
     modifier assertBalanceEquals(uint256 expected) {
         _;
         uint256 actualBalance = _getBalance();
-        _validateDeltaBalance(expected, actualBalance);
+        _processConstantBalance(expected, actualBalance);
     }
 
     modifier exactIncreaseBalance(uint256 exactIncrease) {
