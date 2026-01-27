@@ -30,46 +30,73 @@ pragma solidity ^0.8.20;
  * - All validation logic is implemented in private utility functions.
  */
 abstract contract InvariantGuardInternal {
-     /**
+    /**
      * @notice Maximum number of slots that can be protected in a single invariant check
      * @dev Prevents out-of-gas and griefing attacks
      */
     uint256 private constant MAX_PROTECTED_SLOTS  = 0xffff;
 
-     /**
+    /**
      * @notice Rules describing how before/after deltas are validated
      */
     enum DeltaRule {
         CONSTANT,         // before == after
         INCREASE_EXACT,   // after - before == delta
-        DECREASE_EXACT,   // before - after == delta
+        DECREASE_EXACT,   // before - after == elta
         INCREASE_MAX,     // after - before <= delta
         INCREASE_MIN,     // after - before >= delta
         DECREASE_MAX,     // before - after <= delta
         DECREASE_MIN      // before - after >= delta  
     }
 
-
+    /**
+     * @notice Snapshot of contract bytecode hash before and after execution
+     */
     struct CodeInvariant {
         bytes32 beforeCodeHash;
         bytes32 afterCodeHash;
     }
+
+    /**
+     * @notice Snapshot of a value before and after execution
+     */
     struct ValuePerPosition {
         uint256 beforeValue;
         uint256 afterValue;
         uint256 delta;
     }  
+
+    /// @notice Mismatched array lengths during invariant validation
     error LengthMismatch();
+
+    /// @notice Invariant category is not supported
     error UnsupportedInvariant();  
+
+    /// @notice Invalid or unsupported DeltaRule
     error InvalidDeltaRule(DeltaRule deltaRule);
+
+    /// @notice Too many slots requested for invariant protection
     error ArrayTooLarge(uint256 length, uint256 maxLength);
+
+    /// @notice Code hash invariant violation
     error InvariantViolationCode(CodeInvariant codeInvariant);
+
+    /// @notice Nonce invariant violation
     error InvariantViolationNonce(ValuePerPosition noncePerPosition);
+
+    /// @notice Balance invariant violation
     error InvariantViolationBalance(ValuePerPosition balancePerPosition);
+
+    /// @notice Storage invariant violation
     error InvariantViolationStorage(ValuePerPosition[] storagePerPosition);
+
+    /// @notice Transient storage invariant violation
     error InvariantViolationTransientStorage(ValuePerPosition[] transientStoragePerPosition);
 
-    // --------------------------- CODE -----------------------------------
+    /**
+     * @notice Ensures that the contract bytecode does not change
+     * @dev Compares extcodehash before and after execution
+     */
     modifier invariantCode() {
         bytes32 beforeCodeHash = _getCodeHash();
         _;
@@ -77,7 +104,10 @@ abstract contract InvariantGuardInternal {
         _processInvariantCode(beforeCodeHash, afterCodeHash);
     }
 
-    // -------------------------------- NONCE ------------------------------------  
+    /**
+     * @notice Placeholder for nonce invariants
+     * @dev Currently unsupported and always reverts
+     */  
     modifier invariantNonce() {
         revert UnsupportedInvariant();
         _;
@@ -494,4 +524,5 @@ abstract contract InvariantGuardInternal {
         if (violationCount > 0) revert InvariantViolationTransientStorage(violations);
     }
 }
+
 
