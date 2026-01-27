@@ -431,5 +431,3 @@ abstract contract SafeStateInternal {
         _processMinDecreaseTransientStorage(beforeValueArray, afterValueArray, minDecreaseArray);
     }  
 }
-
-
