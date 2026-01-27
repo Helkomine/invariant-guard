@@ -14,6 +14,13 @@ pragma solidity ^0.8.20;
 // sinh các tình huống không xác định nếu
 // hợp đồng token bất thường (metamorphic
 // logic)).
+// Hạn mức phê duyệt token ERC20, ERC721
+// trên chính nó và các hợp đồng nằm trong
+// khung thực thi của nó (áp dụng giả định
+// tin tưởng vào hợp đồng token, vì vậy có 
+// thể phát sinh các tình huống không xác
+// định nếu hợp đồng token bất thường
+// (metamorphic logic)).
 // Lưu ý rằng chúng tôi không hỗ trợ quan 
 // sát mã bên ngoài nhằm tuân thủ lộ trình
 // EOF.
@@ -23,5 +30,9 @@ abstract contract InvariantGuardExternal {
 
 // -------- ERC20 BALANCE ----------
 
+// -------- ERC20 APPROVAL ----------
+
 // -------- ERC721 BALANCE ----------
+
+// ERC721 APPROVAL 
 }
