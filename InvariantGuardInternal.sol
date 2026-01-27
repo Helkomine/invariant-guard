@@ -133,7 +133,9 @@ abstract contract InvariantGuardInternal {
         _; 
     }
 
-    // -------------------------- BALANCE ---------------------------------
+    /**
+     * @notice Ensures the contract ETH balance remains unchanged
+     */
     modifier invariantBalance() {
         uint256 beforeBalance = _getBalance();
         _;
@@ -141,12 +143,18 @@ abstract contract InvariantGuardInternal {
         _processConstantBalance(beforeBalance, afterBalance);
     }
 
+    /**
+     * @notice Asserts the contract balance equals an expected value after execution
+     */
     modifier assertBalanceEquals(uint256 expected) {
         _;
         uint256 actualBalance = _getBalance();
         _processConstantBalance(expected, actualBalance);
     }
 
+    /**
+     * @notice Ensures the contract balance increases by an exact amount
+     */
     modifier exactIncreaseBalance(uint256 exactIncrease) {
         uint256 beforeBalance = _getBalance();
         _;
@@ -154,6 +162,9 @@ abstract contract InvariantGuardInternal {
         _processExactIncreaseBalance(beforeBalance, afterBalance, exactIncrease);      
     }
 
+/**
+     * @notice Ensures the contract balance decreases by an exact amount
+     */
     modifier exactDecreaseBalance(uint256 exactDecrease) {
         uint256 beforeBalance = _getBalance();
         _;
@@ -524,5 +535,6 @@ abstract contract InvariantGuardInternal {
         if (violationCount > 0) revert InvariantViolationTransientStorage(violations);
     }
 }
+
 
 
