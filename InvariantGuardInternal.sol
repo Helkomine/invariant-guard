@@ -232,20 +232,20 @@ abstract contract InvariantGuardInternal {
         _revertIfArrayTooLarge(length);
         if (beforeValueArray.length != length || afterValueArray.length != length) revert LengthMismatch();
         bool valueMismatch;       
-        uint256 errorAccumulator;
+        uint256 mismatchCount;
         ValuePerPosition[] memory errorArray = new ValuePerPosition[](length);
         for (uint256 i = 0 ; i < length ; ) {            
             valueMismatch = _validateDeltaRule(beforeValueArray[i], afterValueArray[i], expectedDeltaArray[i], selector);
             assembly {
-                errorAccumulator := add(errorAccumulator, valueMismatch)
+                mismatchCount := add(mismatchCount, valueMismatch)
             }
             errorArray[i] = ValuePerPosition(beforeValueArray[i], afterValueArray[i], expectedDeltaArray[i]);
             unchecked { ++i; }
         }
-        return (errorAccumulator, errorArray);
+        return (mismatchCount, errorArray);
     }        
    
-    function _validateDeltaStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray) private pure {
+    function _processConstantStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray) private pure {
         (uint256 errorAccumulator, ValuePerPosition[] memory errorArray) = _processArray(beforeValueArray, afterValueArray, new uint256[](beforeValueArray.length), DeltaRule.CONSTANT);
         if (errorAccumulator > 0) revert InvariantViolationStorage(errorArray); 
     }
@@ -284,13 +284,13 @@ abstract contract InvariantGuardInternal {
         uint256[] memory beforeValueArray = _getStorageArray(positions);
         _;
         uint256[] memory afterValueArray = _getStorageArray(positions);
-        _validateDeltaStorage(beforeValueArray, afterValueArray);
+        _processConstantStorage(beforeValueArray, afterValueArray);
     }
 
     modifier assertStorageEquals(bytes32[] storage positions, uint256[] memory expectedArray) {
         _;
         uint256[] memory actualStorageArray = _getStorageArray(positions);
-        _validateDeltaStorage(expectedArray, actualStorageArray);
+        _processConstantStorage(expectedArray, actualStorageArray);
     }
     
     modifier exactIncreaseStorage(bytes32[] storage positions, uint256[] memory exactIncreaseArray) {
@@ -356,7 +356,7 @@ abstract contract InvariantGuardInternal {
         return valueArray;
     }    
                
-    function _validateDeltaTransientStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray) private pure {
+    function _processConstantTransientStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray) private pure {
         (uint256 errorAccumulator, ValuePerPosition[] memory errorArray) = _processArray(beforeValueArray, afterValueArray, new uint256[](beforeValueArray.length), DeltaRule.CONSTANT);
         if (errorAccumulator > 0) revert InvariantViolationTransientStorage(errorArray); 
     }
@@ -395,13 +395,13 @@ abstract contract InvariantGuardInternal {
         uint256[] memory beforeValueArray = _getTransientStorageArray(positions);
         _;
         uint256[] memory afterValueArray = _getTransientStorageArray(positions);
-        _validateDeltaTransientStorage(beforeValueArray, afterValueArray);
+        _processConstantTransientStorage(beforeValueArray, afterValueArray);
     }
 
     modifier assertTransientStorageEquals(bytes32[] memory positions, uint256[] memory expectedArray) {
         _;
         uint256[] memory actualStorageArray = _getTransientStorageArray(positions);
-        _validateDeltaTransientStorage(expectedArray, actualStorageArray);
+        _processConstantTransientStorage(expectedArray, actualStorageArray);
     }
     
     modifier exactIncreaseTransientStorage(bytes32[] memory positions, uint256[] memory exactIncreaseArray) {
