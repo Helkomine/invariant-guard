@@ -11,6 +11,10 @@ abstract contract InvariantGuardInternal {
         DECREASE_MAX,
         DECREASE_MIN 
     }
+    struct CodeInvariant {
+        bytes32 beforeHash;
+        bytes32 afterHash;
+    }
     struct ValuePerPosition {
         uint256 beforeValue;
         uint256 afterValue;
@@ -20,7 +24,7 @@ abstract contract InvariantGuardInternal {
     error UnsupportedInvariant();  
     error WrongErrorConfiguration(DeltaRule errorOption);
     error ArrayTooLarge(uint256 length, uint256 maxLength);
-    error InvariantViolationCode(bytes32 beforeCodeHash, bytes32 afterCodeHash);
+    error InvariantViolationCode(CodeInvariant code);
     error InvariantViolationNonce(ValuePerPosition noncePerPosition);
     error InvariantViolationBalance(ValuePerPosition balancePerPosition);
     error InvariantViolationStorage(ValuePerPosition[] storagePerPosition);
@@ -36,7 +40,7 @@ abstract contract InvariantGuardInternal {
     }
 
     function _processInvariantCode(bytes32 beforeCodeHash, bytes32 afterCodeHash) private pure {
-        if (beforeCodeHash != afterCodeHash) revert InvariantViolationCode(beforeCodeHash, afterCodeHash);
+        if (beforeCodeHash != afterCodeHash) revert InvariantViolationCode(CodeInvariant(beforeCodeHash, afterCodeHash));
     } 
 
     modifier invariantCode() {
@@ -430,3 +434,4 @@ abstract contract InvariantGuardInternal {
         _processMinDecreaseTransientStorage(beforeValueArray, afterValueArray, minDecreaseArray);
     }  
 }
+
