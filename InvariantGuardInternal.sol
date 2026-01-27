@@ -200,7 +200,10 @@ abstract contract InvariantGuardInternal {
         _processMinDecreaseBalance(beforeBalance, afterBalance, minDecrease);
     }
 
-    // ------------------------------ STORAGE -------------------------------  
+    /**
+     * @notice Ensures specified storage slots remain unchanged
+     * @param positions List of storage slot positions to protect
+     */
     modifier invariantStorage(bytes32[] storage positions) {
         uint256[] memory beforeValueArray = _getStorageArray(positions);
         _;
@@ -208,6 +211,9 @@ abstract contract InvariantGuardInternal {
         _processConstantStorage(beforeValueArray, afterValueArray);
     }
 
+    /**
+     * @notice Asserts storage values equal expected values after execution
+     */
     modifier assertStorageEquals(bytes32[] storage positions, uint256[] memory expectedArray) {
         _;
         uint256[] memory actualStorageArray = _getStorageArray(positions);
@@ -256,7 +262,10 @@ abstract contract InvariantGuardInternal {
         _processMinDecreaseStorage(beforeValueArray, afterValueArray, minDecreaseArray);
     }  
 
-// ------------------- TRANSIENT STORAGE ------------------------------                    
+    /**
+     * @notice Ensures specified transient storage slots remain unchanged
+     * @dev Uses `TLOAD` (EIP-1153)
+     */
     modifier invariantTransientStorage(bytes32[] memory positions) {
         uint256[] memory beforeValueArray = _getTransientStorageArray(positions);
         _;
@@ -311,8 +320,8 @@ abstract contract InvariantGuardInternal {
         uint256[] memory afterValueArray = _getTransientStorageArray(positions);
         _processMinDecreaseTransientStorage(beforeValueArray, afterValueArray, minDecreaseArray);
     }  
-// ---- UTILS FUNCTION ----
-// Các hàm dùng chung
+
+    
     function _emptyDelta(uint256 length) private pure returns (uint256[] memory) {
         return new uint256[](length);
     }
@@ -320,7 +329,11 @@ abstract contract InvariantGuardInternal {
     function _revertIfArrayTooLarge(uint256 numPositions) private pure {
         if (numPositions > MAX_PROTECTED_SLOTS) revert ArrayTooLarge(numPositions, MAX_PROTECTED_SLOTS);
     }  
-    
+
+    /**
+     * @notice Validates a before/after delta using a DeltaRule
+     * @return True if the invariant holds, false otherwise
+     */
     function _validateDeltaRule(uint256 beforeValue, uint256 afterValue, uint256 expectedDelta, DeltaRule deltaRule) private pure returns (bool) {
         if (deltaRule == DeltaRule.CONSTANT) {
             return beforeValue == afterValue;
@@ -359,6 +372,11 @@ abstract contract InvariantGuardInternal {
         }
     }
 
+    /**
+     * @notice Validates array-based invariants
+     * @return violationCount Number of invariant violations
+     * @return violations Detailed per-position violations
+     */
     function _validateDeltaArray(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory expectedDeltaArray, DeltaRule deltaRule) private pure returns (uint256, ValuePerPosition[] memory) {
         uint256 length = expectedDeltaArray.length;
         _revertIfArrayTooLarge(length);
@@ -423,11 +441,14 @@ abstract contract InvariantGuardInternal {
         if (!_validateDeltaRule(beforeBalance, afterBalance, minDecrease, DeltaRule.DECREASE_MIN)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, minDecrease));
     }
 
-// ---- STORAGE UTILS ----
     function _getNumStoragePositions(bytes32[] storage positions) private view returns (uint256) {
         return positions.length;
     }
 
+    /**
+     * @notice Loads values from explicit storage slots
+     * @dev Uses raw sload via assembly
+     */
     function _getStorageArray(bytes32[] storage positions) private view returns (uint256[] memory) {
         uint256 numPositions = _getNumStoragePositions(positions);
         _revertIfArrayTooLarge(numPositions);
@@ -479,7 +500,10 @@ abstract contract InvariantGuardInternal {
         if (violationCount > 0) revert InvariantViolationStorage(violations);
     }
 
-// ---- TRANSIENT STORAGE UTILS ----
+    /**
+     * @notice Loads values from transient storage slots
+     * @dev Uses `TLOAD` (EIP-1153)
+     */
     function _getNumTransientStoragePositions(bytes32[] memory positions) private pure returns (uint256) {
         return positions.length;
     } 
@@ -535,6 +559,3 @@ abstract contract InvariantGuardInternal {
         if (violationCount > 0) revert InvariantViolationTransientStorage(violations);
     }
 }
-
-
-
