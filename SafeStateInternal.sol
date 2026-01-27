@@ -321,7 +321,7 @@ abstract contract SafeStateInternal {
     }  
 
 // ------------------- TRANSIENT STORAGE ------------------------------                    
-    function _getNumTransientStoragePositions(bytes32[] memory positions) private view returns (uint256) {
+    function _getNumTransientStoragePositions(bytes32[] memory positions) private pure returns (uint256) {
         return positions.length;
     } 
 
@@ -431,3 +431,4 @@ abstract contract SafeStateInternal {
         _processMinDecreaseTransientStorage(beforeValueArray, afterValueArray, minDecreaseArray);
     }  
 }
+
