@@ -7,6 +7,28 @@ pragma solidity ^0.8.20;
 // cho phép chúng vi phạm bất biến nếu
 // nằm trong khung thực thi của hợp đồng
 // hiện tại).
+// Lưu ý rằng chúng tôi không hỗ trợ quan 
+// sát mã bên ngoài nhằm tuân thủ lộ trình
+// EOF.
+abstract contract InvariantGuardExternal {
+
+// -------- ETH BALANCE ---------
+    function _getETHBalance(address account) private view returns (uint256) {
+        return account.balance;
+    }
+
+    modifier invariantETHBalance(address account) {
+        uint256 beforeBalance = _getETHBalance(account);
+        _;
+        uint256 afterBalance = _getETHBalance(account);
+        _processInvariantBalance(beforeBalance, afterBalance);
+    }
+// -------- ERC721 BALANCE ----------
+
+// -------- ERC721 APPROVAL ----------
+}
+
+abstract contract InvariantGuardERC20 {
 // Số dư token ERC20, ERC721 trên chính nó
 // và các hợp đồng nằm trong khung thực 
 // thi của nó (áp dụng giả định tin tưởng 
@@ -14,25 +36,23 @@ pragma solidity ^0.8.20;
 // sinh các tình huống không xác định nếu
 // hợp đồng token bất thường (metamorphic
 // logic)).
-// Hạn mức phê duyệt token ERC20, ERC721
+
+// -------- ERC20 BALANCE -----------
+
+// -------- ERC20 APPROVAL ----------
+// Để sử dụng chức năng này, các hợp đồng mục tiêu phải triển khai giao diện sau :
+// `function getApprovedERC20(address owner) external view returns (uint256[] memory);`
+}
+
+abstract contract InvariantGuardERC721 {
+// Hạn mức phê duyệt token ERC721 (ERC20
+// hiện chưa được hỗ trợ vì chúng không có
+// giao diện trả về tất cả người được phê
+// duyệt như getApproved() của ERC721)
 // trên chính nó và các hợp đồng nằm trong
 // khung thực thi của nó (áp dụng giả định
 // tin tưởng vào hợp đồng token, vì vậy có 
 // thể phát sinh các tình huống không xác
 // định nếu hợp đồng token bất thường
 // (metamorphic logic)).
-// Lưu ý rằng chúng tôi không hỗ trợ quan 
-// sát mã bên ngoài nhằm tuân thủ lộ trình
-// EOF.
-abstract contract InvariantGuardExternal {
-
-// -------- ETH BALANCE ---------
-
-// -------- ERC20 BALANCE ----------
-
-// -------- ERC20 APPROVAL ----------
-
-// -------- ERC721 BALANCE ----------
-
-// -------- ERC721 APPROVAL ----------
 }
