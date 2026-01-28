@@ -13,19 +13,65 @@ pragma solidity ^0.8.20;
 abstract contract InvariantGuardExternal {
 
 // -------- ETH BALANCE ---------
-    function _getETHBalance(address account) private view returns (uint256) {
+    function _getExtETHBalance(address account) private view returns (uint256) {
         return account.balance;
     }
 
-    modifier invariantETHBalance(address account) {
-        uint256 beforeBalance = _getETHBalance(account);
+    modifier invariantExtETHBalance(address account) {
+        uint256 beforeBalance = _getExtETHBalance(account);
         _;
-        uint256 afterBalance = _getETHBalance(account);
+        uint256 afterBalance = _getExtETHBalance(account);
         _processInvariantBalance(beforeBalance, afterBalance);
     }
-// -------- ERC721 BALANCE ----------
 
-// -------- ERC721 APPROVAL ----------
+    modifier invariantExtETHBalance(address account) {
+        uint256 beforeBalance = _getExtETHBalance(account);
+        _;
+        uint256 afterBalance = _getExtETHBalance(account);
+        _processInvariantBalance(beforeBalance, afterBalance);
+    }
+
+    modifier invariantExtETHBalance(address account) {
+        uint256 beforeBalance = _getExtETHBalance(account);
+        _;
+        uint256 afterBalance = _getExtETHBalance(account);
+        _processInvariantBalance(beforeBalance, afterBalance);
+    }
+
+    modifier invariantExtETHBalance(address account) {
+        uint256 beforeBalance = _getExtETHBalance(account);
+        _;
+        uint256 afterBalance = _getExtETHBalance(account);
+        _processInvariantBalance(beforeBalance, afterBalance);
+    }
+
+    modifier invariantExtETHBalance(address account) {
+        uint256 beforeBalance = _getExtETHBalance(account);
+        _;
+        uint256 afterBalance = _getExtETHBalance(account);
+        _processInvariantBalance(beforeBalance, afterBalance);
+    }
+
+    modifier invariantExtETHBalance(address account) {
+        uint256 beforeBalance = _getExtETHBalance(account);
+        _;
+        uint256 afterBalance = _getExtETHBalance(account);
+        _processInvariantBalance(beforeBalance, afterBalance);
+    }
+
+    modifier invariantExtETHBalance(address account) {
+        uint256 beforeBalance = _getExtETHBalance(account);
+        _;
+        uint256 afterBalance = _getExtETHBalance(account);
+        _processInvariantBalance(beforeBalance, afterBalance);
+    }
+
+    modifier invariantExtETHBalance(address account) {
+        uint256 beforeBalance = _getExtETHBalance(account);
+        _;
+        uint256 afterBalance = _getExtETHBalance(account);
+        _processInvariantBalance(beforeBalance, afterBalance);
+    }
 }
 
 abstract contract InvariantGuardERC20 {
@@ -48,11 +94,14 @@ abstract contract InvariantGuardERC721 {
 // Hạn mức phê duyệt token ERC721 (ERC20
 // hiện chưa được hỗ trợ vì chúng không có
 // giao diện trả về tất cả người được phê
-// duyệt như getApproved() của ERC721)
+// duyệt như `getApproved()` của ERC721)
 // trên chính nó và các hợp đồng nằm trong
 // khung thực thi của nó (áp dụng giả định
 // tin tưởng vào hợp đồng token, vì vậy có 
 // thể phát sinh các tình huống không xác
 // định nếu hợp đồng token bất thường
 // (metamorphic logic)).
+// -------- ERC721 BALANCE ----------
+
+// -------- ERC721 APPROVAL ----------
 }
