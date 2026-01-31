@@ -72,11 +72,11 @@ abstract contract InvariantGuardInternal {
     /// @notice Invariant category is not supported
     error UnsupportedInvariant();  
 
-    /// @notice Invalid or unsupported DeltaRule
-    error InvalidDeltaConstraint(DeltaConstraint deltaConstraint);
-
     /// @notice Too many slots requested for invariant protection
     error ArrayTooLarge(uint256 length, uint256 maxLength);
+
+    /// @notice Invalid or unsupported DeltaRule
+    error InvalidDeltaConstraint(DeltaConstraint deltaConstraint);
 
     /// @notice Code hash invariant violation
     error InvariantViolationCode(CodeInvariant codeInvariant);
