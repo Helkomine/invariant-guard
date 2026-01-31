@@ -163,16 +163,6 @@ abstract contract InvariantGuardInternal {
         _processExactIncreaseBalance(beforeBalance, afterBalance, exactIncrease);      
     }
 
-    /**
-     * @notice Ensures the contract balance decreases by an exact amount
-     */
-    modifier exactDecreaseBalance(uint256 exactDecrease) {
-        uint256 beforeBalance = _getBalance();
-        _;
-        uint256 afterBalance = _getBalance();
-        _processExactDecreaseBalance(beforeBalance, afterBalance, exactDecrease);  
-    }
-
     modifier maxIncreaseBalance(uint256 maxIncrease) {
         uint256 beforeBalance = _getBalance();
         _;
@@ -187,6 +177,16 @@ abstract contract InvariantGuardInternal {
         _processMinIncreaseBalance(beforeBalance, afterBalance, minIncrease);       
     }
    
+    /**
+     * @notice Ensures the contract balance decreases by an exact amount
+     */
+    modifier exactDecreaseBalance(uint256 exactDecrease) {
+        uint256 beforeBalance = _getBalance();
+        _;
+        uint256 afterBalance = _getBalance();
+        _processExactDecreaseBalance(beforeBalance, afterBalance, exactDecrease);  
+    }
+
     modifier maxDecreaseBalance(uint256 maxDecrease) {
         uint256 beforeBalance = _getBalance();
         _;
@@ -227,13 +227,6 @@ abstract contract InvariantGuardInternal {
         uint256[] memory afterValueArray = _getStorageArray(positions);
         _processExactIncreaseStorage(beforeValueArray, afterValueArray, exactIncreaseArray);
     }
-
-    modifier exactDecreaseStorage(bytes32[] memory positions, uint256[] memory exactDecreaseArray) {
-        uint256[] memory beforeValueArray = _getStorageArray(positions);
-        _;
-        uint256[] memory afterValueArray = _getStorageArray(positions);
-        _processExactDecreaseStorage(beforeValueArray, afterValueArray, exactDecreaseArray);
-    }
     
     modifier maxIncreaseStorage(bytes32[] memory positions, uint256[] memory maxIncreaseArray) {
         uint256[] memory beforeValueArray = _getStorageArray(positions);
@@ -248,7 +241,14 @@ abstract contract InvariantGuardInternal {
         uint256[] memory afterValueArray = _getStorageArray(positions);
         _processMinIncreaseStorage(beforeValueArray, afterValueArray, minIncreaseArray);
     }
-    
+
+    modifier exactDecreaseStorage(bytes32[] memory positions, uint256[] memory exactDecreaseArray) {
+        uint256[] memory beforeValueArray = _getStorageArray(positions);
+        _;
+        uint256[] memory afterValueArray = _getStorageArray(positions);
+        _processExactDecreaseStorage(beforeValueArray, afterValueArray, exactDecreaseArray);
+    }
+
     modifier maxDecreaseStorage(bytes32[] memory positions, uint256[] memory maxDecreaseArray) {
         uint256[] memory beforeValueArray = _getStorageArray(positions);
         _;
@@ -286,13 +286,6 @@ abstract contract InvariantGuardInternal {
         uint256[] memory afterValueArray = _getTransientStorageArray(positions);
         _processExactIncreaseTransientStorage(beforeValueArray, afterValueArray, exactIncreaseArray);
     }
-
-    modifier exactDecreaseTransientStorage(bytes32[] memory positions, uint256[] memory exactDecreaseArray) {
-        uint256[] memory beforeValueArray = _getTransientStorageArray(positions);
-        _;
-        uint256[] memory afterValueArray = _getTransientStorageArray(positions);
-        _processExactDecreaseTransientStorage(beforeValueArray, afterValueArray, exactDecreaseArray);
-    }
     
     modifier maxIncreaseTransientStorage(bytes32[] memory positions, uint256[] memory maxIncreaseArray) {
         uint256[] memory beforeValueArray = _getTransientStorageArray(positions);
@@ -307,7 +300,14 @@ abstract contract InvariantGuardInternal {
         uint256[] memory afterValueArray = _getTransientStorageArray(positions);
         _processMinIncreaseTransientStorage(beforeValueArray, afterValueArray, minIncreaseArray);
     }
-    
+
+    modifier exactDecreaseTransientStorage(bytes32[] memory positions, uint256[] memory exactDecreaseArray) {
+        uint256[] memory beforeValueArray = _getTransientStorageArray(positions);
+        _;
+        uint256[] memory afterValueArray = _getTransientStorageArray(positions);
+        _processExactDecreaseTransientStorage(beforeValueArray, afterValueArray, exactDecreaseArray);
+    }
+
     modifier maxDecreaseTransientStorage(bytes32[] memory positions, uint256[] memory maxDecreaseArray) {
         uint256[] memory beforeValueArray = _getTransientStorageArray(positions);
         _;
@@ -428,16 +428,16 @@ abstract contract InvariantGuardInternal {
         if (_isDeltaViolation(beforeBalance, afterBalance, exactIncrease, DeltaConstraint.INCREASE_EXACT)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, exactIncrease));   
     }
 
-    function _processExactDecreaseBalance(uint256 beforeBalance, uint256 afterBalance, uint256 exactDecrease) private pure {
-        if (_isDeltaViolation(beforeBalance, afterBalance, exactDecrease, DeltaConstraint.DECREASE_EXACT)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, exactDecrease));   
-    }
-
     function _processMaxIncreaseBalance(uint256 beforeBalance, uint256 afterBalance, uint256 maxIncrease) private pure {       
         if (_isDeltaViolation(beforeBalance, afterBalance, maxIncrease, DeltaConstraint.INCREASE_MAX)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, maxIncrease));   
     }
 
     function _processMinIncreaseBalance(uint256 beforeBalance, uint256 afterBalance, uint256 minIncrease) private pure {     
         if (_isDeltaViolation(beforeBalance, afterBalance, minIncrease, DeltaConstraint.INCREASE_MIN)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, minIncrease));      
+    }
+
+    function _processExactDecreaseBalance(uint256 beforeBalance, uint256 afterBalance, uint256 exactDecrease) private pure {
+        if (_isDeltaViolation(beforeBalance, afterBalance, exactDecrease, DeltaConstraint.DECREASE_EXACT)) revert InvariantViolationBalance(ValuePerPosition(beforeBalance, afterBalance, exactDecrease));   
     }
 
     function _processMaxDecreaseBalance(uint256 beforeBalance, uint256 afterBalance, uint256 maxDecrease) private pure {             
@@ -478,11 +478,6 @@ abstract contract InvariantGuardInternal {
         if (violationCount > 0) revert InvariantViolationStorage(violations);
     }
 
-    function _processExactDecreaseStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory exactDecreaseArray) private pure {
-        (uint256 violationCount, ValuePerPosition[] memory violations) = _validateDeltaArray(beforeValueArray, afterValueArray, exactDecreaseArray, DeltaConstraint.DECREASE_EXACT);
-        if (violationCount > 0) revert InvariantViolationStorage(violations);
-    }
-
     function _processMaxIncreaseStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory maxIncreaseArray) private pure {
         (uint256 violationCount, ValuePerPosition[] memory violations) = _validateDeltaArray(beforeValueArray, afterValueArray, maxIncreaseArray, DeltaConstraint.INCREASE_MAX);
         if (violationCount > 0) revert InvariantViolationStorage(violations);
@@ -490,6 +485,11 @@ abstract contract InvariantGuardInternal {
 
     function _processMinIncreaseStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory minIncreaseArray) private pure {
         (uint256 violationCount, ValuePerPosition[] memory violations) = _validateDeltaArray(beforeValueArray, afterValueArray, minIncreaseArray, DeltaConstraint.INCREASE_MIN);
+        if (violationCount > 0) revert InvariantViolationStorage(violations);
+    }
+
+    function _processExactDecreaseStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory exactDecreaseArray) private pure {
+        (uint256 violationCount, ValuePerPosition[] memory violations) = _validateDeltaArray(beforeValueArray, afterValueArray, exactDecreaseArray, DeltaConstraint.DECREASE_EXACT);
         if (violationCount > 0) revert InvariantViolationStorage(violations);
     }
 
@@ -533,11 +533,6 @@ abstract contract InvariantGuardInternal {
         if (violationCount > 0) revert InvariantViolationTransientStorage(violations);
     }
 
-    function _processExactDecreaseTransientStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory exactDecreaseArray) private pure {
-        (uint256 violationCount, ValuePerPosition[] memory violations) = _validateDeltaArray(beforeValueArray, afterValueArray, exactDecreaseArray, DeltaConstraint.DECREASE_EXACT);
-        if (violationCount > 0) revert InvariantViolationTransientStorage(violations);
-    }
-
     function _processMaxIncreaseTransientStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory maxIncreaseArray) private pure {
         (uint256 violationCount, ValuePerPosition[] memory violations) = _validateDeltaArray(beforeValueArray, afterValueArray, maxIncreaseArray, DeltaConstraint.INCREASE_MAX);
         if (violationCount > 0) revert InvariantViolationTransientStorage(violations);
@@ -545,6 +540,11 @@ abstract contract InvariantGuardInternal {
 
     function _processMinIncreaseTransientStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory minIncreaseArray) private pure {
         (uint256 violationCount, ValuePerPosition[] memory violations) = _validateDeltaArray(beforeValueArray, afterValueArray, minIncreaseArray, DeltaConstraint.INCREASE_MIN);
+        if (violationCount > 0) revert InvariantViolationTransientStorage(violations);
+    }
+
+    function _processExactDecreaseTransientStorage(uint256[] memory beforeValueArray, uint256[] memory afterValueArray, uint256[] memory exactDecreaseArray) private pure {
+        (uint256 violationCount, ValuePerPosition[] memory violations) = _validateDeltaArray(beforeValueArray, afterValueArray, exactDecreaseArray, DeltaConstraint.DECREASE_EXACT);
         if (violationCount > 0) revert InvariantViolationTransientStorage(violations);
     }
 
