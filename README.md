@@ -37,4 +37,8 @@ This library provides invariant-based enforcement for:
 ## Security Considerations
 - Reentrancy model assumptions
 - Callback safety
-- Interaction with selfdestruct / code changes 
+- Interaction with selfdestruct / code changes
+
+
+Giúp việc thực hiện DELEGATECALL trở nên an toàn hơn
+Một vấn đề nhức nhối mà các lập trình viên gặp phải khi sử dụng DELEGATECALL là sự thay đổi trạng thái ngoài ý muốn, điều này xảy ra khi một hợp đồng được ủy quyền không hoạt động đúng cách hoặc các cửa hậu độc hại
