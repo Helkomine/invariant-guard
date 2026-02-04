@@ -33,28 +33,39 @@ struct ValuePerPosition {
     uint256 delta;
 }  
 
-// snapshot địa chỉ trước và sau thực thi
+/**
+ * @notice Snapshot of an address value before and after execution
+ * @dev Used to validate ownership or authority invariants
+ */
 struct AddressInvariant {
     address beforeOwner;
     address afterOwner;
 }
 
-// mảng địa chỉ cần kiểm tra bất biến
+/**
+ * @notice Wrapper for an array of accounts subject to invariant checks
+ */
 struct AccountArrayInvariant {
     address[] accountArray;
 }
 
-// bí danh của mảng token ERC20 cần kiểm tra bất biến
+/**
+ * @notice Wrapper for an array of ERC20 tokens subject to invariant checks
+ */
 struct ERC20ArrayInvariant {
     IERC20[] tokenERC20ArrayInvariant;
 }
 
-// bí danh của mảng token ERC721 cần kiểm tra bất biến
+/**
+ * @notice Wrapper for an array of ERC721 tokens subject to invariant checks
+ */
 struct ERC721ArrayInvariant {
     IERC721[] tokenERC721ArrayInvariant;
 }
 
-// bí danh của mảng tokenId ERC721 cần kiểm tra bất biến
+/**
+ * @notice Wrapper for an array of ERC721 token IDs subject to invariant checks
+ */
 struct ERC721TokenIdArray {
     uint256[] tokenIdERC721Array;
 }
@@ -86,19 +97,27 @@ error InvariantViolationStorage(ValuePerPosition[] storagePerPosition);
 /// @notice Transient storage invariant violation
 error InvariantViolationTransientStorage(ValuePerPosition[] transientStoragePerPosition);
 
-// Vi phạm bất biến số dư ETH ngoài hợp đồng
+/// @notice ETH balance invariant violation for external accounts
+/// @dev Thrown when ETH balances of specified external accounts violate invariants
 error InvariantViolationExtETHBalanceArray(AccountArrayInvariant accountArrayInvariant, ValuePerPosition[] extETHBalancePerPosition);
 
-// Vi phạm bất biến số dư ERC20
+/// @notice ERC20 balance invariant violation
+/// @dev Thrown when ERC20 balances of specified accounts violate invariants
 error InvariantViolationERC20BalanceArray(ERC20ArrayInvariant tokenERC20ArrayInvariant, AccountArrayInvariant accountArrayInvariant, ValuePerPosition[] ERC20BalancePerPosition);
 
-// Vi phạm bất biến số dư ERC721
+/// @notice ERC721 balance invariant violation
+/// @dev Thrown when ERC721 balance invariants are violated
 error InvariantViolationERC721BalanceArray(ERC721ArrayInvariant tokenERC721ArrayInvariant, AccountArrayInvariant accountArrayInvariant, ValuePerPosition[] ERC721BalancePerPosition);
 
-// Vi phạm bất biến chủ sở hữu dựa trên tokenId ERC721
+/// @notice ERC721 ownership invariant violation based on token IDs
+/// @dev Thrown when ownership of ERC721 tokenIds changes unexpectedly
 error InvariantViolationERC721OwnerArray(ERC721ArrayInvariant tokenERC721ArrayInvariant, ERC721TokenIdArray tokenIdERC721Array, AddressInvariant[] addressInvariantArray);
 
-// Thư viện logic cho Invariant Guard
+/**
+ * @title InvariantGuardHelper
+ * @notice Shared helper library for invariant validation logic
+ * @dev Contains reusable validation utilities for InvariantGuard variants
+ */
 library InvariantGuardHelper {
     uint256 internal constant MAX_PROTECTED_SLOTS  = 0xffff;
 
