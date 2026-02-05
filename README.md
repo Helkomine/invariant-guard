@@ -1,60 +1,100 @@
 # INVARIANT-GUARD
 
-@author Helkomine (@Helkomine)
+Author: Helkomine (@Helkomine)
 
-Giúp việc thực hiện `DELEGATECALL` trở nên an toàn hơn
+A framework to make `DELEGATECALL` safer.
 
-## Bối cảnh
+## Background
 
-`DELEGATECALL` ra đời từ rất sớm (EIP-7), đây là một phiên bản kế nhiệm được đánh giá là an toàn hơn so với `CALLCODE`. `DELEGATECALL` rất đặc biệt khi cho phép hợp đồng gọi tải và thực thi mã của địa chỉ đích trên chính nó, ngụ ý rằng mã của người được ủy quyền có thể làm thay đổi bộ nhớ của người gọi nó, đây là điểm đặc biệt mà lệnh `CALL` không thể thay thế hoàn toàn được. Ngoài khả năng thực thi mã được ủy quyền, nó cũng ưu việt hơn `CALLCODE` nhờ khả năng giữ nguyên `msg.sender` và `msg.value`, điều này rất hữu ích cho các suy luận tức thời trong bối cảnh thực thi sử dụng mã ủy quyền.
+`DELEGATECALL` was introduced very early in Ethereum (EIP-7) as a safer successor to `CALLCODE`.
+It is a particularly powerful opcode: it allows a contract to load and execute code from a target address in the caller’s context. This implies that delegated code can freely modify the caller’s storage, something that plain `CALL` cannot fully replace.
+In addition, `DELEGATECALL` preserves both msg.sender and msg.value, which makes it extremely useful for composability and immediate reasoning in delegated execution contexts.
 
-Kể từ đó cho đến nay giao thức vẫn chưa có bước cải tiến nào dành cho mã lệnh này, tuy nhiên không có nghĩa là không có vấn đề nào phát sinh. Thực tế khối lượng công việc bổ sung khi sử dụng `DELEGATECALL` luôn ở mức đáng kể, đặc biệt trong khâu quản lý an toàn bộ nhớ. Bất kỳ sự thiếu nhất quán nào trong quản lý bố cục hay các điểm ra vào có thể dẫn đến những hậu quả thảm khốc, một ví dụ điển hình là vụ tấn công vào ví đa chữ ký Parity, kẻ tấn công sử dụng `DELEGATECALL` trên hợp đồng implementation (hợp đồng này cung cấp logic dùng chung cho một hệ sinh thái ví đa chữ ký), hành động này kích hoạt `SELFDESTRUCT` qua đó phá hủy hoàn toàn hợp đồng logic này, hậu quả là các ví dùng nó như nguồn logic vĩnh viễn không thể sử dụng được.
+However, despite its importance, the protocol has not introduced major improvements around this opcode since its inception. This does not mean that no issues exist. In practice, using DELEGATECALL imposes a significant additional burden on developers, especially regarding storage safety and layout management. Any inconsistency in layout assumptions or execution entry points can lead to catastrophic consequences.
 
-Đã có những nỗ lực nhằm giảm thiểu tác động tiêu cực của mã lệnh này, bao gồm việc giới thiệu không gian tên để phân chia rõ ràng các vùng lưu trữ (ERC-7201), tuy nhiên đây chỉ là giải pháp liên quan đến bố cục với giả định proxy ủy quyền đến một hợp đồng logic tuân thủ chuẩn, ngụ ý rằng có ít nhất một cách hợp lệ để làm tan vỡ bố cục này, chẳng hạn vô tình kích hoạt logic độc hại trên một hợp đồng cửa hậu. Đây là một vấn đề đặc biệt nghiêm trọng với các mô hình hợp đồng thông minh dạng module, khi người dùng được trao quyền cài đặt các module tùy chỉnh. Rất ít người dùng có đủ trình độ để phân tích sự an toàn của các module này, một khi đã cài vào, chúng âm thầm chờ đợi cho đến khi người dùng thực hiện các giao dịch trông có vẻ vô hại nhưng thực ra đang kích hoạt cơ chế cho phép kẻ tấn công chiếm toàn bộ quyền kiểm soát ví và gây ra hậu quả không thể lường trước. Một số nhóm cẩn trọng đã cài đặt các logic kiểm soát giá trị trước và sau khi thực thi, điều này giảm thiểu các tác động tiềm tàng khi sử dụng `DELEGATECALL`, tuy nhiên chúng vẫn chưa được truyền bá rộng rãi - điều này khiến đại bộ phận các nhà phát triển vẫn loay hoay tìm giải pháp an toàn khi sử dụng `DELEGATECALL`, nghĩa là một số lượng lớn hợp đồng đã và đang được tạo ra luôn trong thế bị động, một sai sót nhỏ trong bước thực thi đều dẫn đến mất hoàn toàn khả năng kiểm soát.  
+A canonical example is the Parity multisig wallet incident, where an attacker invoked DELEGATECALL on the shared implementation contract. This triggered a SELFDESTRUCT, permanently destroying the logic contract and rendering all dependent wallets unusable.
 
-Dựa trên ý tưởng đó, tác giả đã cung cấp một bản triển khai hoàn chỉnh, với tên gọi ban đầu là Safe-Delegatecall, tuy nhiên sau đó được đổi tên thành Invariant-Guard để hướng đến mục tiêu tham vọng hơn trong việc kiểm soát sự thay đổi trạng thái không chỉ riêng `DELEGATECALL` mà còn cho tất cả các mã lệnh có tiềm năng thay đổi trạng thái khác. 
+(Reference link to be added)
 
-Đây là phiên bản triển khai công khai lần đầu tiên cho Invariant-Guard bằng Solidity, rất mong nhận được sự đánh giá từ cộng đồng. Ngoài ra tác giả còn đang sở hữu một EIP về vấn đề này nhằm cung cấp khả năng bảo vệ mang tính toàn cục, bạn có thể tham khảo tại đây : (Note : EIP chưa được soạn thảo nên để trống)
+Existing Mitigations and Their Limitations
 
-##  Hướng dẫn sử dụng
+There have been attempts to mitigate these risks. One notable example is the introduction of explicit storage namespaces (ERC-7201), which aims to reduce layout collisions.
+However, such solutions primarily address storage layout assumptions and rely on the proxy delegating to a well-behaved logic contract. This implicitly assumes that there exists at least one “valid” execution path. In reality, layouts can still be broken, for example by unintentionally activating malicious logic embedded in a backdoored contract.
+This problem becomes particularly severe in modular smart contract architectures, where users are allowed to install custom modules. Most users lack the expertise to thoroughly analyze the safety of these modules. Once installed, a malicious module can remain dormant and later be triggered by seemingly harmless transactions, ultimately allowing an attacker to seize full control of a wallet and cause irreversible damage.
+Some cautious teams have implemented pre- and post-execution value checks to reduce the impact of DELEGATECALL. While helpful, these patterns are not widely adopted, leaving most developers to repeatedly reinvent partial and fragile safety mechanisms. As a result, many deployed contracts remain fundamentally exposed: a single mistake during delegated execution can result in total loss of control.
 
-Hiện tại Invariant-Guard đang có bốn phiên bản là InvariantGuardInternal, InvariantGuardExternal, InvariantGuardERC20 và InvariantGuardERC721. Nếu bạn chỉ muốn nhận hướng dẫn sử dụng hoặc thích đọc code chi tiết, vui lòng nắm rõ các điểm thiết kế sau đây để tránh cảm thấy bối rối khi sử dụng / đọc 🙂.
+## Motivation and Overview
 
-### Các file khả dụng 
+Based on these observations, the author originally introduced a complete implementation named Safe-Delegatecall, later renamed to Invariant-Guard to reflect a more ambitious goal:
+Not only controlling state changes caused by DELEGATECALL, but by any opcode or execution path that may alter critical invariants.
+This repository presents the first public Solidity implementation of Invariant-Guard. Feedback from the community is highly appreciated.
+The author is also preparing an EIP proposal to provide protocol-level invariant protection, enabling global guarantees that cannot be fully achieved at the contract level alone.
+(Note: the EIP draft is not yet available.)
+Usage Guide
+Invariant-Guard currently provides four variants:
+InvariantGuardInternal
+InvariantGuardExternal
+InvariantGuardERC20
+InvariantGuardERC721
+If you are only interested in usage examples or prefer to read the implementation directly, please familiarize yourself with the design principles below to avoid confusion.
+Available Files
+There are five Invariant-Guard files in total:
+Four functional implementations (listed above)
+One shared helper library: InvariantGuardHelper
+Core Mechanism
+Invariant-Guard works by:
+Taking snapshots of selected values before execution
+Executing the target logic
+Performing post-execution validation
+This design is conceptually similar to the pattern used in flash loan validation.
+Invariant Classification
+Based on how value differences are evaluated, invariants are divided into two main categories:
+Absolute Invariants
+The value must remain exactly the same before and after execution.
+Threshold-Based Invariants
+The value may change, but only within a predefined threshold configuration.
 
-Có tất cả năm file InvariantGuard, bốn trong số đó chứa mã chức năng với tên gọi như được nêu trên, file còn lại là một helper với tên InvariantGuardHelper.
+## Difference Categories
 
-### Giải thích cơ chế
+Based on the nature of state differences, invariants are further divided into eight groups.
+Note:
+Example implementations are not yet provided, so usage guidance for certain cases—especially Storage and Transient Storage—will be refined in future revisions.
+## Security Considerations
 
-Thực hiện snapshot giá trị trước sau và sau đó là hậu kiểm (ý tưởng tương tự với thiết kế flash loan)
+⚠️ Important:
+This code has not been audited and must not be used in production.
 
-### Phân loại bất biến
+### Understanding the Protection Limits
 
-Dựa trên đánh giá khoảng chênh lệch ta chia bất biến ra thành hai nhóm:
+Developers must clearly understand the inherent limitations of this module and proactively account for areas it does not protect.
+For this reason, the author strongly recommends using Invariant-Guard only for critical state locations, such as:
+Proxy pointers
+Ownership slots
+State explicitly declared as invariant by the original specification
 
-- Bất biến tuyệt đối : Giá trị trước sau phải bằng nhau
+## EIP Proposal
 
-- Bất biến dựa trên ngưỡng : Giá trị trước sau phải theo một cấu hình ngưỡng đã được thiết lập
+Based on the Solidity implementation of Invariant-Guard, the author has identified a clear separation between:
 
-Dựa trên các loại chênh lệch ta chia ra thành tám nhóm:
+The inner ring: explicitly selected and guarded state locations (well-covered by this library)
 
-(Note : Chưa tạo các ví dụ mẫu nên chưa định hướng được cách triển khai để đưa vào hướng dẫn sử dụng, đặc biệt cho trường hợp Storage và Transient Storage) 
+The outer ring: all unspecified state locations (vast in number and impractical to enumerate)
 
-## Các vấn đề an ninh
+This outer ring represents the fundamental weakness of any contract-level approach.
+Solving this problem requires protocol-level support, such as:
+A new opcode, or
+A dedicated precompile that can “fence off” all non-designated state locations
 
-Lưu ý quan trọng : Mã chưa được kiểm toán do vậy không được dùng trong sản xuất.
+For this reason, the author has decided to propose an EIP that introduces a robust, global solution, effectively eliminating attacks originating from the outer ring and elevating state safety to an absolute level.
 
-### Hiểu về giới hạn bảo vệ
+(Note: the detailed draft is currently under development.)
 
-Các nhà phát triển phải nắm rõ những hạn chế cố hữu của module tích hợp này và dự phóng an toàn cho những vị trí mà module này không bảo vệ được. Chính vì những hạn chế như vậy mà tác giả khuyến nghị chỉ sử dụng chúng để bảo vệ những vị trí trọng yếu, chằng hạn như con trỏ proxy, chủ sở hữu, hoặc những vị trí được tuyên bố là bất biến dựa trên đặc tả ban đầu.
+## Final Remarks
 
-## Đề xuất EIP
+Through this implementation, the author hopes to encourage serious discussion around invariant protection during execution, especially in the context of DELEGATECALL.
 
-Dựa trên bản triển khai Invariant Guard bằng Solidity, tác giả đã có định hướng rõ ràng về những vị trí cần được bảo vệ bất biến, trong đó Invariant Guard Solidity đã quản lý tốt được vòng trong (các vị trí được lựa chọn), điểm hở duy nhất của thiết kế này là vòng ngoài (toàn bộ vị trí không được chỉ định, chiếm một số lượng cực lớn và không dễ để chỉ định hết). Công việc này chỉ có thể được giải quyết từ cấp độ giao thức, có thể là cung cấp một mã lệnh mới hoặc một hợp đồng biên dịch trước để "rào" tất cả
-các vị trí ngoài phạm vi chỉ định. Do vậy tác giả quyết định đề xuất một EIP nhằm cung cấp bản vá vững chãi, qua đó loại bỏ hoàn toàn các cuộc tấn công từ phía vòng ngoài đưa sự an toàn trạng thái lên mức tuyệt đối. Bản thảo chi tiết hiện ở đây : (Note : Đang soạn bản thảo nên chưa có link)
+This topic is increasingly critical as Account Abstraction gains traction, driving widespread adoption of modular smart accounts. Security and scalability should not be treated as mutually exclusive trade-offs.
 
-## Bình luận
+If you discover any issues in the code—logic errors, naming problems, or otherwise—please feel free to open a pull request.
 
-Thông qua bản triển khai này tác giả hy vọng thúc đẩy một cuộc thảo luận nghiêm túc về vấn đề bảo vệ các bất biến trong quá trình thực thi, đặc biệt là mã lệnh `DELEGATECALL`. Điều này đặc biệt quan trọng trong bối cảnh Account Abstraction đang được thúc đẩy mạnh mẽ dẫn đến nhu cầu sử dụng tài khoản thông minh module ngày càng tăng, trong khi các nhà phát triển mong muốn sự an toàn và khả năng mở rộng không nên bị đánh đổi.
-
-Ngoài ra, nếu bạn phát hiện có bất kỳ lỗi nào trong code : Lỗi logic, lỗi đặt tên, ... vui lòng gửi một pull request. Cảm ơn rất nhiều.
+Thank you very much.
