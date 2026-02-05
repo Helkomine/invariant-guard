@@ -38,7 +38,7 @@ Dựa trên đánh giá khoảng chênh lệch ta chia bất biến ra thành ha
 
 Dựa trên các loại chênh lệch ta chia ra thành tám nhóm:
 
-
+(Note : Chưa tạo các ví dụ mẫu nên chưa định hướng được cách triển khai để đưa vào hướng dẫn sử dụng, đặc biệt cho trường hợp Storage và Transient Storage) 
 
 ## Các vấn đề an ninh
 
