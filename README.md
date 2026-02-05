@@ -254,3 +254,79 @@ contract ReferenceImplementation {
     */
 }
 ```
+
+## Bản thảo EIP
+
+EIP-XXXX : Thêm mã lệnh bảo vệ bất biến bố cục
+
+## Tóm tắt đơn giản
+
+Giới thiệu cơ chế an toàn trạng thái ở cấp độ giao thức thông qua một mã lệnh mới.
+ 
+## Tóm tắt
+
+Thêm một mã lệnh mới `MUTABLE` cấm các thay đổi trạng thái ngoài phạm vi đã thiết lập.
+
+## Động lực
+
+ Việc thay đổi trạng thái ngoài ý muốn trong quá trình thực thi luôn là mối đe dọa tiềm tàng trong vận hành hợp đồng thông minh. Điều này càng trở nên nghiêm trọng đối với các trường hợp sử dụng hợp đồng proxy, vốn dựa trên mã lệnh `DELEGATECALL`, mã lệnh này đặt hợp đồng vào thế bị động gần như hoàn toàn vì không có cách nào để kiểm soát những thay đổi sẽ được thực hiện trong khung bên dưới. Việc giao thức có giải pháp nhằm ổn định bố cục trạng thái trong quá trình thực thi là vô cùng cần thiết, điều này mang lại tiềm năng mở rộng trong tương lai nhưng vẫn đảm bảo an toàn cho hệ sinh thái layer 1 ngày càng năng động.
+ 
+## Thông số kỹ thuật
+
+### Hằng số
+
+ BASE_OPCODE_COST : 3
+ 
+### Mã lệnh
+ 
+`MUTABLE`
+Stack input
+   `offset` : Vị trí bắt đầu của dữ liệu cần lấy trên bộ nhớ
+   `size` : Kích thước dữ liệu cần lấy trên bộ nhớ
+   `isGuard` : Cờ bool cho biết có kích hoạt cơ chế bảo vệ hay không
+   
+### RLP Data Structures
+
+`MUTABLE` sử dụng cấu trúc mã hóa rlp của dữ liệu trên bộ nhớ được dùng cho mã lệnh này, cấu trúc cụ thể có dạng như sau:
+
+```
+# Type aliases for RLP encoding
+Address = bytes20   # 20-byte Ethereum address
+AllowedCode = bool   # Cờ này cho phép thay đổi mã hay không
+AllowedNonce = bool   # Cờ này cho phép thay đổi nonce hay không
+AllowedBalance = bool   # Cờ này cho phép thay đổi số dư hay không
+AllowedStorage = bytes32   # Storage slot key
+AllowedTransientStorage = bytes32   # Transient Storage slot key
+AllowedCommit = bytes32   # Băm lời gọi cho phép thực thi
+
+MutableSet = [
+    Address,
+    AllowedCode,
+    AllowedNonce,
+    AllowedBalance,
+    List[AllowedCommit],
+    List[AllowedStorage],
+    List[AllowedTransientStorage]
+]
+
+MutableSetList = List[MutableSet]
+```
+
+ Hành vi
+  Khi bắt đầu giao dịch hãy khởi tạo hai cờ isPrevFrameGuard và isFrameGuard là false và tập hợp MutableSetList trống trên khung thực thi cao nhất. 
+  Nếu khung thực thi hiện tại chuyển tiếp giao dịch xuống khung thực thi con thông qua các mã lệnh CALL, DELEGATECALL, CALLCODE, STATICCALL, CREATE và CREATE2, hãy chuyển tiếp giá trị isPrevFrameGuard và tập hợp MutableSetList trong khung thực thi hiện tại xuống khung thực thi con đồng thời đặt isFrameGuard là false trên khung thực thi con.
+  Nếu trong quá trình thực thi sử dụng mã lệnh `MUTABLE` hãy thực hiện các bước sau:
+   1. Khung thực thi PHẢI được hoàn nguyên nếu nó đang ở trong STATICCALL.
+   2.   
+  Trong quá trình thực thi, hãy thực hiện các bước sau đây nếu isPrevFrameGuard hoặc isFrameGuard là true:
+   Nếu khung thực thi gọi SELFDESTRUCT, PHẢI hoàn tác nếu isAllowedCode là false.
+   Nếu khung thực thi gọi CREATE hoặc CREATE2, PHẢI hoàn tác nếu isAllowedNonce là false.
+   Nếu khung thực thi gọi CALL, PHẢI hoàn tác nếu isAllowedBalance là false.
+   Nếu khung thực thi sử dụng SSTORE, PHẢI hoàn tác nếu slot được chỉ định là false.
+   Nếu khung thực thi sử dụng TSTORE, PHẢI hoàn tác nếu slot được chỉ định là false.
+  Các trường hợp ngoại lệ
+   Hết gas
+   Không đủ toán hạng trên ngăn xếp
+   
+Lý do
+Tính đến thời điểm hiện tại, đã có ít nhất một giải pháp kiểm soát sự thay đổi trạng thái 
