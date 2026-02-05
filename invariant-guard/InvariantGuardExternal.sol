@@ -2,16 +2,23 @@
 pragma solidity ^0.8.20;
 import "./InvariantGuardHelper.sol";
 
-// Cung cấp khả năng bảo vệ trạng thái 
-// bên ngoài hợp đồng hiện tại
-// Các hạng mục bảo vệ :
-// Số dư ETH địa chỉ bên ngoài (không
-// cho phép chúng vi phạm bất biến nếu
-// nằm trong khung thực thi của hợp đồng
-// hiện tại).
-// Lưu ý rằng chúng tôi không hỗ trợ quan 
-// sát mã bên ngoài nhằm tuân thủ lộ trình
-// EOF.
+/**
+ * @title InvariantGuardExternal
+
+ * @notice Provides invariant protection for state external to the current contract
+ *
+ * @dev This contract enables invariant checks on external ETH balances
+ *      during the execution context of the inheriting contract.
+ *
+ *      Supported invariant category:
+ *      - External ETH balances of specified accounts
+ *
+ *      External accounts are not allowed to violate configured invariants
+ *      while execution is within the scope of the current contract.
+ *
+ *      External bytecode / code hash observation is intentionally NOT supported
+ *      to remain compatible with the EOF roadmap.
+ */
 abstract contract InvariantGuardExternal {
     using InvariantGuardHelper for *;
 
