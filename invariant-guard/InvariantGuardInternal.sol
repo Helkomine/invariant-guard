@@ -415,4 +415,8 @@ abstract contract InvariantGuardInternal {
         (uint256 violationCount, ValuePerPosition[] memory violations) = beforeValueArray._validateDeltaArray(afterValueArray, minDecreaseArray, DeltaConstraint.DECREASE_MIN);
         if (violationCount > 0) revert InvariantViolationTransientStorage(violations);
     }
+
+    // Remaining _process* functions intentionally follow the same pattern
+    // and are omitted from NatSpec repetition for brevity and consistency.
 }
+
