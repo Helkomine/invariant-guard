@@ -53,6 +53,8 @@ Các nhà phát triển phải nắm rõ những hạn chế cố hữu của mo
 Dựa trên bản triển khai Invariant Guard bằng Solidity, tác giả đã có định hướng rõ ràng về những vị trí cần được bảo vệ bất biến, trong đó Invariant Guard Solidity đã quản lý tốt được vòng trong (các vị trí được lựa chọn), điểm hở duy nhất của thiết kế này là vòng ngoài (toàn bộ vị trí không được chỉ định, chiếm một số lượng cực lớn và không dễ để chỉ định hết). Công việc này chỉ có thể được giải quyết từ cấp độ giao thức, có thể là cung cấp một mã lệnh mới hoặc một hợp đồng biên dịch trước để "rào" tất cả
 các vị trí ngoài phạm vi chỉ định. Do vậy tác giả quyết định đề xuất một EIP nhằm cung cấp bản vá vững chãi, qua đó loại bỏ hoàn toàn các cuộc tấn công từ phía vòng ngoài đưa sự an toàn trạng thái lên mức tuyệt đối. Bản thảo chi tiết hiện ở đây : (Note : Đang soạn bản thảo nên chưa có link)
 
-## Ghi chú
+## Bình luận
 
-Nếu bạn phát hiện code có bất kỳ lỗi nào trong code : Lỗi logic, lỗi đặt tên, ... vui lòng gửi một pull request. Cảm ơn rất nhiều.
+Thông qua bản triển khai này tác giả hy vọng thúc đẩy một cuộc thảo luận nghiêm túc về vấn đề bảo vệ các bất biến trong quá trình thực thi, đặc biệt là mã lệnh `DELEGATECALL`. Điều này đặc biệt quan trọng trong bối cảnh Account Abstraction đang được thúc đẩy mạnh mẽ dẫn đến nhu cầu sử dụng tài khoản thông minh module ngày càng tăng, trong khi các nhà phát triển mong muốn sự an toàn và khả năng mở rộng không nên bị đánh đổi.
+
+Ngoài ra, nếu bạn phát hiện code có bất kỳ lỗi nào trong code : Lỗi logic, lỗi đặt tên, ... vui lòng gửi một pull request. Cảm ơn rất nhiều.
