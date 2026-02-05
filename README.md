@@ -109,3 +109,42 @@ This topic is increasingly critical as Account Abstraction gains traction, drivi
 If you discover any issues in the code—logic errors, naming problems, or otherwise—please feel free to open a pull request.
 
 Thank you very much.
+
+## Reference Implementation
+
+```
+struct AddressSet {
+    address object;
+    bool isAllowedAddress;
+    bool isAllowedCode;
+    bool isAllowedNonce;
+    bool isAllowedBalance;
+    bytes32[] allowedStorageList;
+    bytes32[] allowedTransientStorageList;
+}
+struct Set {
+    bool isAllowedAddress;
+    bool isAllowedCode;
+    bool isAllowedNonce;
+    bool isAllowedBalance;
+    mapping(bytes32 => bool) isAllowedStorage;
+    mapping(bytes32 => bool) isAllowedTransientStorage;
+}
+mapping(address => Set) allowedSet;
+
+function addAllowedSet(AddressSet[] calldata addressSet) public {
+    for (uint256 i = 0 ; i < addressSet.length ; ++i) {
+        Set storage set = allowedSet[addressSet[i].object];
+        set.isAllowedAddress = addressSet[i].isAllowedAddress;
+        set.isAllowedCode = addressSet[i].isAllowedCode;
+        set.isAllowedNonce = addressSet[i].isAllowedNonce;
+        set.isAllowedBalance = addressSet[i].isAllowedBalance;
+        for (uint256 j = 0 ; j < addressSet[i].allowedStorageList.length ; ++j) {
+            set.isAllowedStorage[addressSet[i].allowedStorageList[j]] = true;
+        }
+        for (uint256 k = 0 ; k < addressSet[i].allowedTransientStorageList.length ; ++k) {
+            set.isAllowedTransientStorage[addressSet[i].allowedTransientStorageList[k]] = true;
+        }
+    }
+}
+```
