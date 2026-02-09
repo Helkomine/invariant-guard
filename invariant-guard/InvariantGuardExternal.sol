@@ -2,6 +2,10 @@
 pragma solidity ^0.8.20;
 import "./InvariantGuardHelper.sol";
 
+/// @notice ETH balance invariant violation for external accounts
+/// @custom:invariant external.eth: external account ETH balances must satisfy the delta constraint
+error InvariantViolationExtETHBalanceArray(AccountArrayInvariant accountArrayInvariant, ValuePerPosition[] extETHBalancePerPosition);
+
 /**
  * @title InvariantGuardExternal
  * @author Helkomine (@Helkomine)
