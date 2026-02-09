@@ -79,10 +79,6 @@ error InvariantViolationStorage(ValuePerPosition[] storagePerPosition);
 /// @custom:invariant tstorage: specified transient storage slots must satisfy the delta constraint
 error InvariantViolationTransientStorage(ValuePerPosition[] transientStoragePerPosition);
 
-/// @notice ETH balance invariant violation for external accounts
-/// @custom:invariant external.eth: external account ETH balances must satisfy the delta constraint
-error InvariantViolationExtETHBalanceArray(AccountArrayInvariant accountArrayInvariant, ValuePerPosition[] extETHBalancePerPosition);
-
 /**
  * @title InvariantGuardHelper
  * @author Helkomine (@Helkomine)
