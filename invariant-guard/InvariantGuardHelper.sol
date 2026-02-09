@@ -59,26 +59,6 @@ error InvalidDeltaConstraint(DeltaConstraint deltaConstraint);
 /// @notice Too many slots requested for invariant protection
 error ArrayTooLarge(uint256 length, uint256 maxLength);
 
-/// @notice Code hash invariant violation
-/// @custom:invariant code: contract bytecode hash must remain unchanged
-error InvariantViolationCode(CodeInvariant codeInvariant);
-
-/// @notice Nonce invariant violation
-/// @custom:invariant nonce: nonce must satisfy the configured delta constraint
-error InvariantViolationNonce(ValuePerPosition noncePerPosition);
-
-/// @notice Balance invariant violation
-/// @custom:invariant balance: contract ETH balance must satisfy the delta constraint
-error InvariantViolationBalance(ValuePerPosition balancePerPosition);
-
-/// @notice Storage invariant violation
-/// @custom:invariant storage: specified storage slots must satisfy the delta constraint
-error InvariantViolationStorage(ValuePerPosition[] storagePerPosition);
-
-/// @notice Transient storage invariant violation
-/// @custom:invariant tstorage: specified transient storage slots must satisfy the delta constraint
-error InvariantViolationTransientStorage(ValuePerPosition[] transientStoragePerPosition);
-
 /**
  * @title InvariantGuardHelper
  * @author Helkomine (@Helkomine)
