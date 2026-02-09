@@ -1,6 +1,18 @@
 // SPDX-License-Identifier: CC0-1.0
 pragma solidity ^0.8.20;
 import "./InvariantGuardHelper.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
+/**
+ * @notice Wrapper for an array of ERC20 tokens subject to invariant checks
+ */
+struct ERC20ArrayInvariant {
+    IERC20[] tokenERC20ArrayInvariant;
+}
+
+/// @notice ERC20 balance invariant violation
+/// @custom:invariant erc20.balance: ERC20 balances must satisfy the delta constraint
+error InvariantViolationERC20BalanceArray(ERC20ArrayInvariant tokenERC20ArrayInvariant, AccountArrayInvariant accountArrayInvariant, ValuePerPosition[] ERC20BalancePerPosition);
 
 /**
  * @title InvariantGuardERC20
