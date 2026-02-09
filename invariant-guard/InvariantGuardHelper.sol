@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: CC0-1.0
 pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 /**
  * @notice Rules describing how before/after deltas are validated
@@ -56,20 +55,6 @@ struct ERC20ArrayInvariant {
     IERC20[] tokenERC20ArrayInvariant;
 }
 
-/**
- * @notice Wrapper for an array of ERC721 tokens subject to invariant checks
- */
-struct ERC721ArrayInvariant {
-    IERC721[] tokenERC721ArrayInvariant;
-}
-
-/**
- * @notice Wrapper for an array of ERC721 token IDs subject to invariant checks
- */
-struct ERC721TokenIdArray {
-    uint256[] tokenIdERC721Array;
-}
-
 /// @notice Mismatched array lengths during invariant validation
 error LengthMismatch();
 
@@ -109,14 +94,6 @@ error InvariantViolationExtETHBalanceArray(AccountArrayInvariant accountArrayInv
 /// @notice ERC20 balance invariant violation
 /// @custom:invariant erc20.balance: ERC20 balances must satisfy the delta constraint
 error InvariantViolationERC20BalanceArray(ERC20ArrayInvariant tokenERC20ArrayInvariant, AccountArrayInvariant accountArrayInvariant, ValuePerPosition[] ERC20BalancePerPosition);
-
-/// @notice ERC721 balance invariant violation
-/// @custom:invariant erc721.balance: ERC721 balances must satisfy the delta constraint
-error InvariantViolationERC721BalanceArray(ERC721ArrayInvariant tokenERC721ArrayInvariant, AccountArrayInvariant accountArrayInvariant, ValuePerPosition[] ERC721BalancePerPosition);
-
-/// @notice ERC721 ownership invariant violation
-/// @custom:invariant erc721.owner: ownership of specified tokenIds must remain unchanged
-error InvariantViolationERC721OwnerArray(ERC721ArrayInvariant tokenERC721ArrayInvariant, ERC721TokenIdArray tokenIdERC721Array, AddressInvariant[] addressInvariantArray);
 
 /**
  * @title InvariantGuardHelper
