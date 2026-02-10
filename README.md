@@ -137,81 +137,109 @@ BASE_OPCODE_COST : 3
 ### Mã lệnh
  
 `MUTABLE (0x2f)`
+
 Stack input
-   `offset` : Vị trí bắt đầu của dữ liệu cần lấy trên bộ nhớ
-   `length` : Kích thước dữ liệu tối đa được truy cập trên bộ nhớ
-   `isGuard` : Cờ bool cho biết có kích hoạt cơ chế bảo vệ hay không
-   
+
+- `offset` : Vị trí bắt đầu của dữ liệu cần lấy trên bộ nhớ
+- `length` : Kích thước dữ liệu tối đa được truy cập trên bộ nhớ
+- `isGuard` : Cờ bool cho biết có kích hoạt cơ chế bảo vệ hay không
+
+### Biến guardOrigin 
+
+Biến này dùng để quản lý việc kích hoạt các điều khoản hạn chế trên toàn bộ khung thực thi trong suốt giao dịch. Các lựa chọn của biến này được cho như sau:
+
+- `NONE` : Chưa kích hoạt điều khoản hạn chế.
+- `LOCAL` : Điều khoản hạn chế chỉ được áp dụng trên khung thực thi hiện tại.
+- `INHERITED` : Điều khoản hạn chế được kế thừa từ khung thực thi cha.
+
 ### RLP Data Structures
 
 `MUTABLE` sử dụng cấu trúc mã hóa rlp của dữ liệu trên bộ nhớ của khung thực thi gọi nó, cấu trúc cụ thể có dạng như sau:
 
 ```
 # Type aliases for RLP encoding
+Option = uint8   # Danh sách lựa chọn trạng thái
+Active = bool   # Cờ này cho biết loại trạng thái đã chọn được miễn trừ kiểm tra hay không
 Address = bytes20   # 20-byte Ethereum address
-AllowedCode = bool   # Cờ này cho phép thay đổi mã hay không
-AllowedNonce = bool   # Cờ này cho phép thay đổi nonce hay không
-AllowedBalance = bool   # Cờ này cho phép thay đổi số dư hay không
 AllowedStorage = bytes32   # Storage slot key
 AllowedTransientStorage = bytes32   # Transient Storage slot key
-AllowedCommit = bytes32   # Băm lời gọi cho phép thực thi
 
 Option = {
-    0x00 : Code,
-    0x01 : Nonce,
-    0x02 : Balance,
-    0x03 : Storage,
-    0x04 : TransientStorage
+    0x00 : Code,   # Miễn trừ áp đặt trạng thái trên code
+    0x01 : Nonce,   # Miễn trừ áp đặt trạng thái trên nonce
+    0x02 : Balance,   # Miễn trừ áp đặt trạng thái trên balance
+    0x03 : Storage,   # Miễn trừ áp đặt trạng thái trên toàn bộ slot của storage
+    0x04 : TransientStorage   # Miễn trừ áp đặt trạng thái trên toàn bộ slot của transient storage
 }
 
+# Danh sách các thiết lập điều khoản hạn chế tương ứng với Option
 Payload = {
-    0x00 : Empty,
-    0x01 : Empty,
-    0x02 : Empty,
-    0x03 : Storage,
-    0x04 : TransientStorage
+    0x00 : Null,
+    0x01 : Null,
+    0x02 : Null,
+    0x03 : List[AllowedStorage],
+    0x04 : List[AllowedTransientStorage]
 }
 
+# Tập hợp các thiết lập tương ứng dựa trên Option
 PolicyEntry = [
-    Option,   #
+    Option,
     Active,
     Payload
 ]
 
+# Tập hợp các thiết lập trên một địa chỉ được chọn
 MutableSet = [
     Address,
     List[PolicyEntry]
 ]
 
+# Mảng MutableSet
 MutableSetList = List[MutableSet]
 ```
 
 ### Hành vi
 
-Khi bắt đầu giao dịch hãy khởi tạo hai cờ isPrevFrameGuard và isFrameGuard là false và tập hợp MutableSetList trống trên khung thực thi cao nhất. 
-  
-Nếu khung thực thi hiện tại chuyển tiếp giao dịch xuống khung thực thi con thông qua các mã lệnh `CALL`, `DELEGATECALL`, `CALLCODE`, `STATICCALL`, `CREATE` và `CREATE2`, hãy chuyển tiếp giá trị `isPrevFrameGuard` và tập hợp MutableSetList trong khung thực thi hiện tại xuống khung thực thi con đồng thời đặt isFrameGuard là false trên khung thực thi con.
-  
-  Nếu trong quá trình thực thi có sử dụng mã lệnh `MUTABLE` và `isGuard` là `true` hãy thực hiện như sau:
-  
-  - Nếu isPrevFrameGuard là false, hãy cập nhật MutableSetList tương ứng với dữ liệu đã cho trên bộ nhớ.
+#### Khởi tạo giao dịch
 
-  - Nếu isPrevFrameGuard là true, hãy lấy phần giao của MutableSetList hiện tại và MutableSetList đã cho trên bộ nhớ.
+Khi bắt đầu giao dịch hãy khởi tạo biến `guardOrigin` là `NONE` và tập hợp `MutableSetList` trống trên khung thực thi cao nhất. 
 
-    
-  Trong quá trình thực thi, hãy thực hiện các bước sau đây nếu isPrevFrameGuard hoặc isFrameGuard là true:
-   Nếu khung thực thi gọi SELFDESTRUCT, PHẢI hoàn tác nếu isAllowedCode là false.
-   Nếu khung thực thi gọi CREATE hoặc CREATE2, PHẢI hoàn tác nếu isAllowedNonce là false.
-   Nếu khung thực thi gọi CALL, PHẢI hoàn tác nếu isAllowedBalance là false.
-   Nếu khung thực thi sử dụng SSTORE, PHẢI hoàn tác nếu slot được chỉ định là false.
-   Nếu khung thực thi sử dụng TSTORE, PHẢI hoàn tác nếu slot được chỉ định là false.
+#### Truyền bá điều khoản hạn chế 
+
+Nếu khung thực thi hiện tại chuyển tiếp giao dịch xuống khung thực thi con thông qua các mã lệnh `CALL`, `DELEGATECALL`, `CALLCODE`, `STATICCALL`, `CREATE` và `CREATE2`, hãy chuyển tiếp toàn bộ `MutableSetList` của khung thực thi hiện tại và guardOrigin xuống khung thực thi con theo quy tắc sau đây:
+
+- Nếu khung thực thi hiện tại đang có guardOrigin là NONE hãy chuyển tiếp guardOrigin là NONE xuống khung thực thi con.
+- Nếu khung thực thi hiện tại đang có guardOrigin là LOCAL hoặc INHERITED hãy chuyển tiếp guardOrigin là INHERITED xuống khung thực thi con.
+
+#### Thực thi mã lệnh MUTABLE trong khung hiện tại
+
+Nếu đối số `isGuard` được đặt là false, hãy đặt lại guardOrigin là NONE chỉ khi guardOrigin là NONE hoặc LOCAL.
+Nếu đối số `isGuard` được đặt là true:
+
+- Nếu guardOrigin là NONE hoặc LOCAL hãy đặt MutableSetList là phần dữ liệu được giải mã trên bộ nhớ đã cho.
+- Nếu guardOrigin là INHERITED, hãy đặt MutableSetList là phần giao của phần dữ liệu được giải mã trên bộ nhớ đã cho và MutableSetList kế thừa từ khung thực thi cha.
+
+#### Thực thi bất biến trên mã lệnh thay đổi trạng thái
+
+Nếu guardOrigin là LOCAL hoặc INHERITED thì các điều khoản hạn chế sẽ được áp dụng trên các mã lệnh như sau:
+
+- Nếu khung thực thi gọi SELFDESTRUCT, PHẢI hoàn tác nếu .
+- Nếu khung thực thi gọi CREATE hoặc CREATE2, PHẢI hoàn tác nếu isAllowedNonce là false.
+- Nếu khung thực thi gọi CALL, PHẢI hoàn tác nếu isAllowedBalance là false.
+- Nếu khung thực thi sử dụng SSTORE, PHẢI hoàn tác nếu slot được chỉ định là false.
+- Nếu khung thực thi sử dụng TSTORE, PHẢI hoàn tác nếu slot được chỉ định là false.
+
+Lưu ý rằng các mã lệnh mới có tạo ra sự thay đổi trạng thái hoặc các loại trạng thái mới được thêm vào trong tương lai PHẢI điều chỉnh hành vi sao cho phù hợp với thông số kỹ thuật của mã lệnh này để tránh các vấn đề tương thích ngược.
+
 ### Các trường hợp ngoại lệ
-   Hết gas
-   Không đủ toán hạng trên ngăn xếp
+
+- Hết gas
+- Không đủ toán hạng trên ngăn xếp
+- Kích thước tự mô tả của từng phần tử RLP trên bộ nhớ vượt quá giá trị `length`. 
 
 ### Chi phí gas
 
-Chi phí gas cho mã lệnh `MUTABLE` bao gồm phí cơ bản BASE_OPCODE_COST, ngoài ra còn có chi phí mở rộng bộ nhớ lên đến `length` tương tự với mô hình tính phí EVM hiện tại dành cho bộ nhớ và chi phí tính trên mỗi chunk (32-byte) tương ứng với `length` được chỉ định nhằm hỗ trợ phân tích rlp.
+Chi phí gas cho mã lệnh `MUTABLE` bao gồm phí cơ bản `BASE_OPCODE_COST`, ngoài ra còn có chi phí mở rộng bộ nhớ theo quy tắc tính phí hiện hành và chi phí tính trên mỗi chunk (32-byte) tương ứng với `length` được chỉ định nhằm hỗ trợ phân tích rlp.
    
 ## Lý do
 
