@@ -220,10 +220,11 @@ When an execution frame spawns a child frame via `CALL`, `DELEGATECALL`, `CALLCO
 #### Execution of the MUTABLE opcode
 
 When executing the `MUTABLE` opcode, the EVM SHALL decode the RLP-encoded `MutableSetList` from memory starting at `offset`, reading at most `length` bytes.
-If `isGuard` is set to `false`, the EVM SHALL set `guardOrigin` to `NONE` only if the current value of `guardOrigin` is `NONE` or `LOCAL`. If `guardOrigin` is `INHERITED`, this operation SHALL have no effect.
+If `isGuard` is set to `false`, the EVM SHALL set `guardOrigin` to `NONE` **only if** the current value of `guardOrigin` is `NONE` or `LOCAL`. If `guardOrigin` is `INHERITED`, this operation SHALL have no effect.
 If `isGuard` is set to `true`:
-If `guardOrigin` is `NONE` or `LOCAL`, the decoded `MutableSetList` SHALL replace the current `MutableSetList`, and `guardOrigin` SHALL be set to `LOCAL`.
-If `guardOrigin` is `INHERITED`, the effective `MutableSetList` SHALL be computed as the intersection of the decoded `MutableSetList` and the inherited `MutableSetList` from the parent execution frame, and `guardOrigin` `SHALL` remain `INHERITED`.
+
+- If `guardOrigin` is `NONE` or `LOCAL`, the decoded `MutableSetList` SHALL replace the current `MutableSetList`, and `guardOrigin` SHALL be set to `LOCAL`.
+- If `guardOrigin` is `INHERITED`, the effective `MutableSetList` SHALL be computed as the intersection of the decoded `MutableSetList` and the inherited `MutableSetList` from the parent execution frame, and `guardOrigin` `SHALL` remain `INHERITED`.
 
 #### Enforcement of mutation invariants
 
@@ -235,10 +236,10 @@ The following operations SHALL always result in an exceptional halt when `guardO
 
 The following operations SHALL result in an exceptional halt unless explicitly permitted by the effective `MutableSetList`:
 
-- `CALL` with a non-zero value, unless mutation of Balance is permitted for both the caller address and the target address.
-- `CREATE` or `CREATE2`, unless mutation of Code and Nonce is permitted for the created address, and mutation of Nonce is permitted for the caller address. If a non-zero value is transferred, mutation of Balance MUST also be permitted for both addresses.
-- `SSTORE`, unless mutation of Storage is permitted for the executing address and the target storage slot is explicitly allowed.
-- `TSTORE`, unless mutation of TransientStorage is permitted for the executing address and the target transient storage slot is explicitly allowed.
+- `CALL` with a non-zero value, unless mutation of `Balance` is permitted for both the caller address and the target address.
+- `CREATE` or `CREATE2`, unless mutation of `Code` and `Nonce` is permitted for the created address, and mutation of `Nonce` is permitted for the caller address. If a non-zero value is transferred, mutation of `Balance` MUST also be permitted for both addresses.
+- `SSTORE`, unless mutation of `Storage` is permitted for the executing address and the target storage slot is explicitly allowed.
+- `TSTORE`, unless mutation of `TransientStorage` is permitted for the executing address and the target transient storage slot is explicitly allowed.
 
 Any future opcode or protocol change that introduces new forms of state mutation MUST define its interaction with `MUTABLE` in a manner consistent with the enforcement rules defined herein.
 
@@ -248,15 +249,19 @@ Execution of `MUTABLE` SHALL result in an exceptional halt if any of the followi
 
 - Out-of-gas.
 - Insufficient stack items.
-- Any attempt to decode RLP data that would require reading beyond length bytes.
-- The RLP payload does not conform to the MutableSetList structure defined in this specification.
+- Any attempt to decode RLP data that would require reading beyond `length` bytes.
+- The RLP payload does not conform to the `MutableSetList` structure defined in this specification.
 
 ### Gas cost
 
-The gas cost of the MUTABLE opcode consists of:
+The gas cost of the `MUTABLE` opcode consists of:
 
 - The base opcode cost `BASE_OPCODE_COST`.
 - Memory expansion costs, calculated according to existing EVM rules.
-- A per-chunk (32-byte) cost proportional to length, to account for RLP decoding overhead.
+- A per-chunk (32-byte) cost proportional to `length`, to account for RLP decoding overhead.
    
 ## Lý do
+
+### `STATICCALL` Clarification
+
+`STATICCALL` does not perform state mutation and is therefore not subject to `MUTABLE` enforcement.
