@@ -128,83 +128,87 @@ Việc thay đổi trạng thái ngoài ý muốn trong quá trình thực thi l
 
 Tính đến thời điểm hiện tại, đã có ít nhất một giải pháp kiểm soát sự thay đổi trạng thái ở cấp độ hợp đồng, chúng tôi gọi nó là một "rào chắn trong", lớp rào chắn này đem lại khả năng bảo vệ tốt và có thể lập trình được đối với những vị trí được chỉ định, tuy nhiên nó hoàn toàn không thể che chắn được những vị trí ngoài phạm vi đã cho. Do vậy chúng tôi cần một giải pháp đối tác gọi là "rào chắn ngoài" để đạt được sự bao phủ toàn diện trên trạng thái, điều này chỉ có thể đạt được thông qua sự thay đổi ở cấp độ giao thức. Bằng cách kết hợp cả "rào chắn trong" và "rào chắn ngoài" chúng ta thành công xây dựng một bức tường lửa kiên cố trước các tác động ngoài ý muốn khi thực hiện lời gọi ra bên ngoài.
  
-## Thông số kỹ thuật
+## Specification
 
-### Hằng số
+### Constants
 
-BASE_OPCODE_COST : 3
- 
-### Mã lệnh
- 
+`BASE_OPCODE_COST` : 3
+
+### Opcode
+
 `MUTABLE (0x2f)`
 
-Stack input
+#### Stack input:
 
-- `offset` : Vị trí bắt đầu của dữ liệu cần lấy trên bộ nhớ
-- `length` : Kích thước dữ liệu tối đa được truy cập trên bộ nhớ
-- `isGuard` : Cờ bool cho biết có kích hoạt cơ chế bảo vệ hay không
+`offset`: Memory offset at which the RLP-encoded data begins.
+`length`: Maximum number of bytes that may be read from memory.
+`isGuard`: Boolean flag indicating whether the guard mechanism is enabled.
 
-### Biến guardOrigin 
+#### `guardOrigin`
 
-Biến này dùng để quản lý việc kích hoạt các điều khoản hạn chế trên toàn bộ khung thực thi trong suốt giao dịch. Các lựa chọn của biến này được cho như sau:
+The `guardOrigin` variable tracks the origin and propagation of mutation restrictions throughout execution frames within a transaction. It SHALL take one of the following values:
 
-- `NONE` : Chưa kích hoạt điều khoản hạn chế.
-- `LOCAL` : Điều khoản hạn chế chỉ được áp dụng trên khung thực thi hiện tại.
-- `INHERITED` : Điều khoản hạn chế được kế thừa từ khung thực thi cha.
+• `NONE`: No mutation restrictions are active.
+• `LOCAL`: Mutation restrictions are active and were established in the current execution frame.
+• `INHERITED`: Mutation restrictions are active and were inherited from a parent execution frame.
 
 ### RLP Data Structures
 
-`MUTABLE` sử dụng cấu trúc mã hóa rlp của dữ liệu trên bộ nhớ của khung thực thi gọi nó, cấu trúc cụ thể có dạng như sau:
+The `MUTABLE` opcode interprets RLP-encoded data located in the caller’s memory.
+
+#### Type aliases
+
+`Option`: `uint8`
+`Allowed`: `bool`
+`Address`: `bytes20`
+`AllowedStorage`: `bytes32`
+`AllowedTransientStorage`: `bytes32`
+
+#### Option values
+`Option` is a `uint8` value with the following meanings:
+`0x00`: Code
+`0x01`: Nonce
+`0x02`: Balance
+`0x03`: Storage
+`0x04`: TransientStorage
+
+#### Payload interpretation
+
+The `Payload` field SHALL be interpreted according to the associated Option value:
+For `0x00`, `0x01`, `0x02`: the payload MUST be empty.
+For `0x03`: the payload MUST be an RLP list of `AllowedStorage` values.
+For `0x04`: the payload MUST be an RLP list of `AllowedTransientStorage` values.
+
+#### Structures
+
+• `PolicyEntry`:
 
 ```
-# Type aliases for RLP encoding
-Option = uint8   # Danh sách lựa chọn trạng thái
-Allowed = bool   # Indicates whether mutation of this state class is permitted
-Address = bytes20   # 20-byte Ethereum address
-AllowedStorage = bytes32   # Storage slot key
-AllowedTransientStorage = bytes32   # Transient Storage slot key
-
-Option = {
-    0x00 : Code,   # Miễn trừ áp đặt trạng thái trên code
-    0x01 : Nonce,   # Miễn trừ áp đặt trạng thái trên nonce
-    0x02 : Balance,   # Miễn trừ áp đặt trạng thái trên balance
-    0x03 : Storage,   # Miễn trừ áp đặt trạng thái trên toàn bộ slot của storage
-    0x04 : TransientStorage   # Miễn trừ áp đặt trạng thái trên toàn bộ slot của transient storage
-}
-
-# Danh sách các thiết lập điều khoản hạn chế tương ứng với Option
-Payload = {
-    0x00 : Null,
-    0x01 : Null,
-    0x02 : Null,
-    0x03 : List[AllowedStorage],
-    0x04 : List[AllowedTransientStorage]
-}
-
-# Tập hợp các thiết lập tương ứng dựa trên Option
-PolicyEntry = [
-    Option,
-    Allowed,
-    Payload
-]
-
-# Tập hợp các thiết lập trên một địa chỉ được chọn
-MutableSet = [
-    Address,
-    List[PolicyEntry]
-]
-
-# Mảng MutableSet
-MutableSetList = List[MutableSet]
+[ Option, Allowed, Payload ]
 ```
 
-### Hành vi
+• `MutableSet`:
 
-#### Khởi tạo giao dịch
+```
+[ Address, List[PolicyEntry] ]
+```
 
-Khi bắt đầu giao dịch hãy khởi tạo biến `guardOrigin` là `NONE` và tập hợp `MutableSetList` trống trên khung thực thi cao nhất. 
+• `MutableSetList`:
 
-#### Truyền bá điều khoản hạn chế 
+```
+List[MutableSet]
+```
+
+If multiple `PolicyEntry` elements for the same `Option` appear within a `MutableSet`, only the last occurrence in RLP order SHALL be applied.
+If multiple `MutableSet` elements reference the same Address, they SHALL be processed in RLP order, with later entries overriding earlier ones.
+
+### Semantics
+
+#### Transaction initialization
+
+At the start of transaction execution, `guardOrigin` SHALL be initialized to `NONE`, and the effective `MutableSetList` SHALL be empty in the top-level execution frame.
+
+#### Propagation of mutation restrictions 
 
 Nếu khung thực thi hiện tại chuyển tiếp giao dịch xuống khung thực thi con thông qua các mã lệnh `CALL`, `DELEGATECALL`, `CALLCODE`, `STATICCALL`, `CREATE` và `CREATE2`, hãy chuyển tiếp toàn bộ `MutableSetList` của khung thực thi hiện tại và guardOrigin xuống khung thực thi con theo quy tắc sau đây:
 
