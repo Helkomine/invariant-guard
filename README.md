@@ -314,6 +314,14 @@ Vì `MutableSetList` sử dụng `Option` để thiết lập bất biến, các
 
 Các trình biên dịch cần tạo thuận lợi tốt nhất cho các lập trình viên trong việc truy cập vào trạng thái thông qua mã cấp cao. Trình biên dịch Solidity hiện tại vẫn chưa cho phép sử dụng các biến phức tạp cho transient storage, điều này hạn chế nghiêm trọng khả năng tiếp cận các cơ chế an toàn nâng cao. Sự phối hợp tốt giữa các bản nâng cấp và trình biên dịch có tác động không nhỏ đến sự an toàn trong thiết kế hợp đồng.
 
+## Triển khai thử nghiệm
+
+Sẽ thông báo sau
+
+## Triển khai tham chiếu 
+
+Sẽ thông báo sau
+
 ## Bản quyền
 
 Copyright and related rights waived via CC0.
