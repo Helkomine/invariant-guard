@@ -298,4 +298,12 @@ Chi phí này giúp hỗ trợ máy khách phân tích RLP và quản lý các t
 
 ### Thay đổi hành vi các mã lệnh
 
-Các mã lệnh liên quan đến trạng thái sẽ được điều chỉnh bởi mã lệnh `MUTABLE`, tác động mà nó gây ra tương tự vơi việc thực thi các mã lệnh này trong bối cảnh `STATICCALL`. Mặt khác tác động của mã lệnh này mang tính cục bộ khi nó chỉ hoạt động
+Các mã lệnh liên quan đến trạng thái sẽ được điều chỉnh bởi mã lệnh `MUTABLE`, tác động mà nó gây ra tương tự với việc thực thi các mã lệnh này trong bối cảnh `STATICCALL`. Mặt khác tác động của mã lệnh này mang tính cục bộ khi nó chỉ hoạt động trong phạm vi giao dịch và do vậy không ảnh hưởng đến hành vi thực tế của các mã lệnh mà nó kiểm soát.
+
+### Đánh đổi giữa an toàn và linh hoạt
+
+Để đạt được sự bảo vệ tốt nhất, hợp đồng phải chỉ định chính xác các vị trí mà nó cho phép thay đổi, đây là một công việc khó khăn với đối với hầu hết dApp. Do vậy EIP này cũng cho phép chúng bỏ qua các kiểm tra chính xác trên từng slot storage và transient storage nhằm đơn giản hóa luồng công việc cho dApp, điều này đòi hỏi giao diện ví hoặc dApp phải đánh giá hợp đồng mà người dùng dự định tương tác có an toàn hay không. Nhìn chung là có rủi ro cao hơn so với định vị chính xác nhưng có thể được bù đắp thông qua kiểm toán hợp đồng.
+
+### Cải thiện trình biên dịch
+
+Các trình biên dịch cần tạo thuận lợi tốt nhất cho các lập trình viên trong việc truy cập vào trạng thái thông qua mã cấp cao. Trình biên dịch Solidity hiện tại vẫn chưa cho phép 
