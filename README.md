@@ -234,8 +234,8 @@ Trên khung thực thi hiện tại, nếu guardOrigin là LOCAL hoặc INHERITE
 Note : Thay bằng ngôn ngữ đặc tả cho mã giả này
 - Thực thi CALLCODE. 
 - Thực thi SELFDESTRUCT.
-- Thực thi CALL trong đó value > 0 và (lookup[address(this)][0x02].active == false hoặc lookup[stack.targetAddress][0x02].active == false).
-- Thực thi CREATE hoặc CREATE2 với isAllowedNonce là false.
+- Thực thi CALL trong đó value > 0 và (lookup[address(this)][0x02].active == false hoặc lookup[targetAddress][0x02].active == false).
+- Thực thi CREATE hoặc CREATE2 với (lookup[computedTargetAddress][0x00].active == false) hoặc (lookup[address(this)][0x01] == false hoặc lookup[computedTargetAddress][0x01] == false) hoặc (value > 0 và (lookup[address(this)][0x02].active == false hoặc lookup[computedTargetAddress][0x02].active == false)).
 - Slot mục tiêu của SSTORE là lookup[address(this)][0x03].active == false và lookup[address(this)][0x03].allowedSlot[targetSlot] == false.
 - Slot mục tiêu của TSTORE là lookup[address(this)][0x04].active == false và lookup[address(this)][0x04].allowedSlot[targetSlot] == false.
 
