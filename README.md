@@ -265,11 +265,13 @@ Giới thiệu cơ chế an toàn trạng thái ở cấp độ giao thức thô
  
 ## Tóm tắt
 
-Thêm một mã lệnh mới `MUTABLE` cấm các thay đổi trạng thái ngoài phạm vi đã thiết lập.
+Thêm một mã lệnh mới `MUTABLE` cấm các thay đổi trạng thái ngoài phạm vi đã thiết lập. Bất kỳ nỗ lực nào làm thay đổi trạng thái ngoài phạm vi đã cho phải bị hoàn tác.
 
 ## Động lực
 
- Việc thay đổi trạng thái ngoài ý muốn trong quá trình thực thi luôn là mối đe dọa tiềm tàng trong vận hành hợp đồng thông minh. Điều này càng trở nên nghiêm trọng đối với các trường hợp sử dụng hợp đồng proxy, vốn dựa trên mã lệnh `DELEGATECALL`, mã lệnh này đặt hợp đồng vào thế bị động gần như hoàn toàn vì không có cách nào để kiểm soát những thay đổi sẽ được thực hiện trong khung bên dưới. Việc giao thức có giải pháp nhằm ổn định bố cục trạng thái trong quá trình thực thi là vô cùng cần thiết, điều này mang lại tiềm năng mở rộng trong tương lai nhưng vẫn đảm bảo an toàn cho hệ sinh thái layer 1 ngày càng năng động.
+Việc thay đổi trạng thái ngoài ý muốn trong quá trình thực thi luôn là mối đe dọa tiềm tàng trong vận hành hợp đồng thông minh. Điều này càng trở nên nghiêm trọng đối với các trường hợp sử dụng hợp đồng proxy, vốn dựa trên mã lệnh `DELEGATECALL`, mã lệnh này đặt hợp đồng vào thế bị động gần như hoàn toàn vì không có cách nào để kiểm soát những thay đổi sẽ được thực hiện trong khung bên dưới. Việc giao thức có giải pháp nhằm ổn định bố cục trạng thái trong quá trình thực thi là vô cùng cần thiết, điều này mang lại tiềm năng mở rộng trong tương lai nhưng vẫn đảm bảo an toàn cho hệ sinh thái layer 1 ngày càng năng động.
+
+Tính đến thời điểm hiện tại, đã có ít nhất một giải pháp kiểm soát sự thay đổi trạng thái ở cấp độ hợp đồng, chúng tôi gọi nó là một "rào chắn trong", lớp rào chắn này đem lại khả năng bảo vệ tốt và có thể lập trình được đối với những vị trí được chỉ định, tuy nhiên nó hoàn toàn không thể che chắn được những vị trí ngoài phạm vi đã cho. Do vậy chúng tôi cần một giải pháp đối tác gọi là "rào chắn ngoài" để đạt được sự bao phủ toàn diện trên trạng thái, điều này chỉ có thể đạt được thông qua sự thay đổi ở cấp độ giao thức. Bằng cách kết hợp cả "rào chắn trong" và "rào chắn ngoài" chúng ta thành công xây dựng một bức tường lửa kiên cố trước các tác động ngoài ý muốn khi thực hiện lời gọi ra bên ngoài.
  
 ## Thông số kỹ thuật
 
@@ -282,7 +284,7 @@ Thêm một mã lệnh mới `MUTABLE` cấm các thay đổi trạng thái ngo�
 `MUTABLE`
 Stack input
    `offset` : Vị trí bắt đầu của dữ liệu cần lấy trên bộ nhớ
-   `size` : Kích thước dữ liệu cần lấy trên bộ nhớ
+   `length` : Kích thước dữ liệu tối đa được truy cập trên bộ nhớ
    `isGuard` : Cờ bool cho biết có kích hoạt cơ chế bảo vệ hay không
    
 ### RLP Data Structures
@@ -312,9 +314,11 @@ MutableSet = [
 MutableSetList = List[MutableSet]
 ```
 
- Hành vi
-  Khi bắt đầu giao dịch hãy khởi tạo hai cờ isPrevFrameGuard và isFrameGuard là false và tập hợp MutableSetList trống trên khung thực thi cao nhất. 
-  Nếu khung thực thi hiện tại chuyển tiếp giao dịch xuống khung thực thi con thông qua các mã lệnh `CALL`, `DELEGATECALL`, `CALLCODE`, `STATICCALL`, `CREATE` và `CREATE2`, hãy chuyển tiếp giá trị `isPrevFrameGuard` và tập hợp MutableSetList trong khung thực thi hiện tại xuống khung thực thi con đồng thời đặt isFrameGuard là false trên khung thực thi con.
+### Hành vi
+
+Khi bắt đầu giao dịch hãy khởi tạo hai cờ isPrevFrameGuard và isFrameGuard là false và tập hợp MutableSetList trống trên khung thực thi cao nhất. 
+  
+Nếu khung thực thi hiện tại chuyển tiếp giao dịch xuống khung thực thi con thông qua các mã lệnh `CALL`, `DELEGATECALL`, `CALLCODE`, `STATICCALL`, `CREATE` và `CREATE2`, hãy chuyển tiếp giá trị `isPrevFrameGuard` và tập hợp MutableSetList trong khung thực thi hiện tại xuống khung thực thi con đồng thời đặt isFrameGuard là false trên khung thực thi con.
   
   Nếu trong quá trình thực thi có sử dụng mã lệnh `MUTABLE` và `isGuard` là `true` hãy thực hiện như sau:
   
@@ -329,12 +333,15 @@ MutableSetList = List[MutableSet]
    Nếu khung thực thi gọi CALL, PHẢI hoàn tác nếu isAllowedBalance là false.
    Nếu khung thực thi sử dụng SSTORE, PHẢI hoàn tác nếu slot được chỉ định là false.
    Nếu khung thực thi sử dụng TSTORE, PHẢI hoàn tác nếu slot được chỉ định là false.
-  Các trường hợp ngoại lệ
+### Các trường hợp ngoại lệ
    Hết gas
    Không đủ toán hạng trên ngăn xếp
+
+### Chi phí gas
+
+Chi phí gas cho mã lệnh `MUTABLE` bao gồm phí cơ bản BASE_OPCODE_COST, ngoài ra còn có chi phí mở rộng bộ nhớ lên đến `length` tương tự với mô hình tính phí EVM hiện tại dành cho bộ nhớ và chi phí tính trên mỗi chunk (32-byte) tương ứng với `length` được chỉ định nhằm hỗ trợ phân tích rlp.
    
-Lý do
-Tính đến thời điểm hiện tại, đã có ít nhất một giải pháp kiểm soát sự thay đổi trạng thái 
+## Lý do
 
 
 
