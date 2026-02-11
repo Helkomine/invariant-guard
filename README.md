@@ -60,17 +60,63 @@ This design is conceptually similar to the pattern used in flash loan validation
 
 ### Invariant Classification
 
-Based on how value differences are evaluated, invariants are divided into two main categories:
+Trong thiết kế của InvariantGuard, bất biến được mở rộng theo cả hai chiều:
 
-- Absolute Invariants: The value must remain exactly the same before and after execution.
+- Các loại trạng thái : Bao gồm `Code`, `Nonce`, `Balance`, `Storage` và `Transient Storage`.
+- Ngưỡng giới hạn : Cung cấp các cấu hình giá trị bao gồm EXACT (chính xác tuyệt đối), INCREASE_EXACT (tăng đúng), INCREASE_MAX (tăng tối đa), INCREASE_MIN (tăng tối thiểu), DECREASE_EXACT (giảm đúng), DECREASE_MAX (giảm tối đa), DECREASE_MIN (giảm tối thiểu).
 
-- Threshold-Based Invariants: The value may change, but only within a predefined threshold configuration.
+Tất cả các loại bất biến đều được thể hiện dưới dạng một modifier với tên được ghép giữa ngưỡng giới hạn + các loại trạng thái. Có một trường hợp đặc biệt bất biến dựa trên kỳ vọng (có tiền tố assert) trong đó một giá trị kỳ vọng phải được cung cấp bởi hợp đồng khách thay vì được đọc trực tiếp từ trạng thái, tuy nhiên nó vẫn được xếp vào loại EXACT.
+Các cấu hình mới sẽ được nghiên cứu và thêm vào trong tương lai.
 
-### Difference Categories
+### Tích hợp vào hợp đồng khách
 
-Based on the nature of state differences, invariants are further divided into eight groups.
-Note:
-Example implementations are not yet provided, so usage guidance for certain cases—especially Storage and Transient Storage—will be refined in future revisions.
+Thêm vào file `.sol` hiện tại của bạn như sau:
+
+- `InvariantGuardInternal`:
+
+```
+import "https://github.com/Helkomine/invariant-guard/blob/main/invariant-guard/InvariantGuardInternal.sol";
+```
+
+- `InvariantGuardExternal`:
+
+```
+https://github.com/Helkomine/invariant-guard/blob/main/invariant-guard/InvariantGuardExternal.sol
+```
+
+- `InvariantGuardERC20`:
+
+```
+https://github.com/Helkomine/invariant-guard/blob/main/invariant-guard/InvariantGuardERC20.sol
+```
+
+- `InternalGuardERC721`:
+
+```
+https://github.com/Helkomine/invariant-guard/blob/main/invariant-guard/InvariantGuardERC721.sol
+```
+
+Sau đó thêm tích hợp các modifier được cung cấp vào hàm mà bạn muốn bảo vệ. Đây là một ví dụ đơn giản:
+
+```
+import "https://github.com/Helkomine/invariant-guard/blob/main/invariant-guard/InvariantGuardInternal.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+
+address owner;
+
+function selfDelegateCall(address target, bytes calldata data) public payable invariantStorage(_getSlot()) {
+    Address.functionDelegateCall(target, data);
+}
+
+function _getSlot() internal pure returns (bytes32[] memory slots) {
+    bytes32 slot;
+    assembly {
+        slot := owner.slot
+    }
+    slots = new bytes32[](1);
+    slots[0] = slot;
+}
+```
 
 ### Phân biệt với ReentrancyGuard
 
