@@ -61,10 +61,10 @@ This design is conceptually similar to the pattern used in flash loan validation
 ### Invariant Classification
 
 Based on how value differences are evaluated, invariants are divided into two main categories:
-Absolute Invariants
-The value must remain exactly the same before and after execution.
-Threshold-Based Invariants
-The value may change, but only within a predefined threshold configuration.
+
+- Absolute Invariants: The value must remain exactly the same before and after execution.
+
+- Threshold-Based Invariants: The value may change, but only within a predefined threshold configuration.
 
 ### Difference Categories
 
