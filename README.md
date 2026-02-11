@@ -25,7 +25,7 @@ Based on these observations, the author originally introduced a complete impleme
 
 Not only controlling state changes caused by `DELEGATECALL`, but by any opcode or execution path that may alter critical invariants.
 
-This repository presents the first public Solidity implementation of Invariant-Guard. Feedback from the community is highly appreciated.
+This repository presents the first public Solidity implementation of `Invariant-Guard`. Feedback from the community is highly appreciated.
 The author is also preparing an EIP proposal to provide protocol-level invariant protection, enabling global guarantees that cannot be fully achieved at the contract level alone.
 
 (Note: the EIP draft is not yet available.)
@@ -66,7 +66,7 @@ The value must remain exactly the same before and after execution.
 Threshold-Based Invariants
 The value may change, but only within a predefined threshold configuration.
 
-## Difference Categories
+### Difference Categories
 
 Based on the nature of state differences, invariants are further divided into eight groups.
 Note:
