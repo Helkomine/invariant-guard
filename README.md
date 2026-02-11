@@ -81,7 +81,10 @@ Khi quan sát thiết lập logic của `InvariantGuard` rất dễ gợi nhớ 
 
 Dễ nhận thấy điểm giao nhau duy nhất của cả hai là cho phép đặt các thực thi cần bảo vệ vào giữa. Phần còn lại đều khác biệt:
 
-- `ReentrancyGuard` luôn tạo ra trạng thái mới (trong phiên bản cũ sử dụng storage) hoặc có tác động đến trạng thái (trong phiên bản mới sử dụng transient storage)
+- `ReentrancyGuard` luôn tạo ra trạng thái mới (trong phiên bản cũ sử dụng storage) hoặc có tác động cục bộ đến trạng thái (trong phiên bản mới sử dụng transient storage). Luồng công việc có chi phí cao hơn và phải chịu các hạn chế trong khung thực thi `static`.
+- `InvariantGuard` chỉ đọc trạng thái trước và sau khi thực thi do vậy chi phí lớn nhất sẽ là phí truy cập trạng thái. Luồng công việc có chi phí thấp hơn và không phải chịu các hạn chế trong khung thực thi `static`.
+
+Điều quan trọng nhất là `ReentrancyGuard` được dùng để chống tái nhập trong khi `InvariantGuard` được dùng để chống các thay đổi bất biến ngoài ý muốn. Hai công việc này khác nhau và do vậy nhà phát triển cần hiểu rõ khi sử dụng để tránh các nhầm lẫn không đáng có. Ngoài ra việc kết hợp cả hai chức năng này có thể tạo ra các hành vi không mong muốn trong thực thi do vậy cần xem xét kỹ lưỡng khi phối hợp.
 
 ## Security Considerations
 
