@@ -82,17 +82,17 @@ Each state category can be configured with a threshold policy:
 - **DECREASE_EXACT** – Must decrease by an exact amount
 - **DECREASE_MAX** – May decrease up to a maximum bound
 - **DECREASE_MIN** – Must decrease by at least a minimum bound
-- 
+ 
 Each invariant is exposed as a Solidity modifier whose name is composed of:
 
 ```
 <Threshold> + <StateType>
 ```
 
-Special Case: Expectation-Based Invariants
-There is a special class of invariants prefixed with assert.
+**Special Case: Expectation-Based Invariants**
+There is a special class of invariants prefixed with `assert`.
 In this case, the expected value is provided explicitly by the calling contract rather than being read directly from the current state.
-Despite this difference in value sourcing, these invariants are still classified under the **EXACT** category.
+Despite this difference in value sourcing, these invariants are still classified under the **EXACT** category. 
 Additional configurations may be researched and introduced in future versions.
 
 ### Integration into Client Contracts
@@ -123,7 +123,8 @@ https://github.com/Helkomine/invariant-guard/blob/main/invariant-guard/Invariant
 https://github.com/Helkomine/invariant-guard/blob/main/invariant-guard/InvariantGuardERC721.sol
 ```
 
-Sau đó thêm tích hợp các modifier được cung cấp vào hàm mà bạn muốn bảo vệ. Đây là một ví dụ đơn giản:
+After importing, apply the provided modifiers to the functions you wish to protect.
+Example:
 
 ```
 // SPDX-License-Identifier: CC0-1.0
@@ -148,20 +149,6 @@ contract InvariantSimple is InvariantGuardInternal {
 }
 ```
 
-### Phân biệt với ReentrancyGuard
-
-Khi quan sát thiết lập logic của `InvariantGuard` rất dễ gợi nhớ đến `ReentrancyGuard` của OpenZeppelin. Tuy nhiên luồng thực thi của chúng có điểm khác biệt nhau:
-
-- `ReentrancyGuard` sử dụng mô hình `Check - Write - Execute - Write`.
-- `InvariantGuard` sử dụng mô hình `Read - Execute - Read - Check`.
-
-Dễ nhận thấy điểm giao nhau duy nhất của cả hai là cho phép đặt các thực thi cần bảo vệ vào giữa. Phần còn lại đều khác biệt:
-
-- `ReentrancyGuard` luôn tạo ra trạng thái mới (trong phiên bản cũ sử dụng storage) hoặc có tác động cục bộ đến trạng thái (trong phiên bản mới sử dụng transient storage). Luồng công việc có chi phí cao hơn và phải chịu các hạn chế trong khung thực thi `static`.
-- `InvariantGuard` chỉ đọc trạng thái trước và sau khi thực thi do vậy chi phí lớn nhất sẽ là phí truy cập trạng thái. Luồng công việc có chi phí thấp hơn và không phải chịu các hạn chế trong khung thực thi `static`.
-
-Điều quan trọng nhất là `ReentrancyGuard` được dùng để chống tái nhập trong khi `InvariantGuard` được dùng để chống các thay đổi bất biến ngoài ý muốn. Hai công việc này khác nhau và do vậy nhà phát triển cần hiểu rõ khi sử dụng để tránh các nhầm lẫn không đáng có. Ngoài ra việc kết hợp cả hai chức năng này có thể tạo ra các hành vi không mong muốn trong thực thi do vậy cần xem xét kỹ lưỡng khi phối hợp.
-
 ## Security Considerations
 
 ⚠️ Important:
@@ -171,9 +158,47 @@ This code has not been audited and must not be used in production.
 
 Developers must clearly understand the inherent limitations of this module and proactively account for areas it does not protect.
 For this reason, the author strongly recommends using Invariant-Guard only for critical state locations, such as:
-Proxy pointers
-Ownership slots
-State explicitly declared as invariant by the original specification
+
+- Proxy pointers
+- Ownership slots
+- State explicitly declared as invariant by the original specification
+
+### Difference from ReentrancyGuard
+
+At first glance, the execution logic of InvariantGuard may resemble OpenZeppelin’s `ReentrancyGuard`. However, their execution models are fundamentally different.
+Execution Flow Comparison
+`ReentrancyGuard` follows the pattern:
+
+```
+Check → Write → Execute → Write
+```
+
+`InvariantGuard` follows the pattern:
+
+```
+Read → Execute → Read → Check
+```
+
+The only common element is that the protected execution occurs in the middle.
+All other aspects differ.
+State Impact and Cost Model
+`ReentrancyGuard`
+Introduces new state (older versions use storage).
+Newer versions rely on transient storage, but still introduce local state mutation.
+Has higher operational cost.
+Is restricted in static execution contexts.
+`InvariantGuard`
+Only reads state before and after execution.
+Does not introduce new state.
+The primary cost comes from state access.
+Has lower operational overhead.
+Is not restricted under static execution contexts.
+Functional Purpose
+Most importantly:
+ReentrancyGuard prevents reentrancy attacks.
+InvariantGuard prevents unintended invariant violations.
+These are distinct security concerns. Developers must clearly understand their differences to avoid misuse.
+Combining both mechanisms is possible but should be done carefully, as their interaction may introduce unintended execution behavior.
 
 ## EIP Proposal
 
