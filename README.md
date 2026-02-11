@@ -99,22 +99,25 @@ https://github.com/Helkomine/invariant-guard/blob/main/invariant-guard/Invariant
 Sau đó thêm tích hợp các modifier được cung cấp vào hàm mà bạn muốn bảo vệ. Đây là một ví dụ đơn giản:
 
 ```
+// SPDX-License-Identifier: CC0-1.0
+pragma solidity ^0.8.0;
 import "https://github.com/Helkomine/invariant-guard/blob/main/invariant-guard/InvariantGuardInternal.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+contract InvariantSimple is InvariantGuardInternal {
+    address owner;
 
-address owner;
-
-function selfDelegateCall(address target, bytes calldata data) public payable invariantStorage(_getSlot()) {
-    Address.functionDelegateCall(target, data);
-}
-
-function _getSlot() internal pure returns (bytes32[] memory slots) {
-    bytes32 slot;
-    assembly {
-        slot := owner.slot
+    function selfDelegateCall(address target, bytes calldata data) public payable invariantStorage(_getSlot()) {
+        Address.functionDelegateCall(target, data);
     }
-    slots = new bytes32[](1);
-    slots[0] = slot;
+
+    function _getSlot() internal pure returns (bytes32[] memory slots) {
+        bytes32 slot;
+        assembly {
+            slot := owner.slot
+        }
+        slots = new bytes32[](1);
+        slots[0] = slot;
+    }
 }
 ```
 
