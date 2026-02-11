@@ -112,22 +112,23 @@ Thank you very much.
 
 ## Bản thảo EIP
 
-EIP-XXXX : Thêm mã lệnh bảo vệ bất biến bố cục
+EIP-XXXX: Invariant Layout Guard Opcode
 
-## Tóm tắt đơn giản
+## Simple Summary
 
-Giới thiệu cơ chế an toàn trạng thái ở cấp độ giao thức thông qua một mã lệnh mới.
- 
-## Tóm tắt
+Introduce a protocol-level state safety mechanism through a new opcode.
 
-Thêm một mã lệnh mới `MUTABLE` cấm các thay đổi trạng thái ngoài phạm vi đã thiết lập. Bất kỳ nỗ lực nào làm thay đổi trạng thái ngoài phạm vi đã cho phải bị hoàn tác.
+## Abstract
 
-## Động lực
+This EIP introduces a new opcode, MUTABLE, which restricts state changes to an explicitly defined scope. Any attempt to modify state outside the permitted scope MUST cause execution to revert.
 
-Việc thay đổi trạng thái ngoài ý muốn trong quá trình thực thi luôn là mối đe dọa tiềm tàng trong vận hành hợp đồng thông minh. Điều này càng trở nên nghiêm trọng đối với các trường hợp sử dụng hợp đồng proxy, vốn dựa trên mã lệnh `DELEGATECALL`, mã lệnh này đặt hợp đồng vào thế bị động gần như hoàn toàn vì không có cách nào để kiểm soát những thay đổi sẽ được thực hiện trong khung bên dưới. Việc giao thức có giải pháp nhằm ổn định bố cục trạng thái trong quá trình thực thi là vô cùng cần thiết, điều này mang lại tiềm năng mở rộng trong tương lai nhưng vẫn đảm bảo an toàn cho hệ sinh thái layer 1 ngày càng năng động.
+## Motivation
 
-Tính đến thời điểm hiện tại, đã có ít nhất một giải pháp kiểm soát sự thay đổi trạng thái ở cấp độ hợp đồng, chúng tôi gọi nó là một "rào chắn trong", lớp rào chắn này đem lại khả năng bảo vệ tốt và có thể lập trình được đối với những vị trí được chỉ định, tuy nhiên nó hoàn toàn không thể che chắn được những vị trí ngoài phạm vi đã cho. Do vậy chúng tôi cần một giải pháp đối tác gọi là "rào chắn ngoài" để đạt được sự bao phủ toàn diện trên trạng thái, điều này chỉ có thể đạt được thông qua sự thay đổi ở cấp độ giao thức. Bằng cách kết hợp cả "rào chắn trong" và "rào chắn ngoài" chúng ta thành công xây dựng một bức tường lửa kiên cố trước các tác động ngoài ý muốn khi thực hiện lời gọi ra bên ngoài.
- 
+Unintended state mutation during execution is a persistent security risk in smart contract systems. This risk is especially pronounced in proxy-based architectures that rely on `DELEGATECALL`, where the calling contract effectively relinquishes control over which state changes may occur in the callee’s execution context.
+At the protocol level, there is currently no mechanism to stabilize or constrain state layout during execution. Introducing such a mechanism enables safer composition of contracts, supports future extensibility, and improves overall robustness for an increasingly dynamic Layer 1 ecosystem.
+At present, there exist contract-level approaches for constraining state mutation, which we refer to as an inner guard. These mechanisms offer strong and programmable protection for explicitly declared locations but fundamentally cannot defend against mutations outside the specified set. Because the number of potentially mutable locations is unbounded, attempting full coverage at the contract level is infeasible under current gas constraints.
+To achieve comprehensive protection, a complementary outer guard is required. This can only be implemented at the protocol level. By combining an inner guard with the proposed outer guard, contracts can form a robust firewall against unintended or malicious side effects arising from external calls. 
+
 ## Specification
 
 ### Constants
@@ -260,68 +261,73 @@ The gas cost of the `MUTABLE` opcode consists of:
 - Memory expansion costs, calculated according to existing EVM rules.
 - A per-chunk (32-byte) cost proportional to `length`, to account for RLP decoding overhead.
    
-## Lý do
+## Rationale
 
-### Ý tưởng thiết kế
+### Design Intent
 
-Ý tưởng ban đầu dựa trên việc tìm kiếm một giải pháp an toàn và minh bạch cho việc sử dụng các hợp đồng thông minh module, hướng đến việc cho phép các module được tích hợp một cách tự do nhưng vẫn đảm bảo an toàn cho hợp đồng gốc. Dựa trên ý tưởng đó chúng tôi đã xây dựng `InvariantGuard`, một hợp đồng cung cấp các modifier mạnh mẽ và linh hoạt cho phép tích hợp vào hợp đồng gốc để bảo vệ an toàn trạng thái với nhiều lựa chọn khác nhau. Tuy nhiên chúng tôi đã nhanh chóng nhận ra hạn chế của thiết kế này và các mẫu hợp đồng tương tự khi chúng không thể bảo vệ được những vị trí không được chỉ định. Những vị trí này có số lượng lớn đến mức khiến việc toàn bộ là bất khả thi với lượng gas hiện tại. Do vậy để đạt được hiệu ứng bao phủ toàn diện cần phải có sự hỗ trợ từ cấp độ giao thức.
+The initial design goal was to enable safe and transparent use of modular smart contracts, allowing modules to be freely integrated while preserving the safety guarantees of the host contract.
+Based on this idea, we developed `InvariantGuard`, a contract-level pattern that provides powerful and flexible modifiers for protecting state with fine-grained control. However, this and similar patterns were found to be inherently limited: they cannot protect unspecified state locations, and the number of such locations is too large to enumerate exhaustively.
+Therefore, achieving full state coverage requires direct support from the protocol. The `MUTABLE` opcode addresses this gap by enforcing invariants at the execution environment level.
 
-### Không có lệnh cấm trong `STATICCALL`
+### No Prohibition Under STATICCALL
 
-Vì `MUTABLE` chỉ thiết lập môi trường và không tạo ra thêm trạng thái mới nên không có lý do chính đáng nào để cấm trong khung thực thi `static`.
+The `MUTABLE` opcode only configures execution constraints and does not itself introduce new state changes. As such, there is no technical justification for prohibiting its use in a `STATICCALL` execution context.
 
-### Không có chỉ dẫn chi tiết cho `CALLCODE` và `SELFDESTRUCT`
+### Minimal Handling of CALLCODE and SELFDESTRUCT
 
-Cả hai mã lệnh này đều được xem là đã lỗi thời do vậy chúng chỉ được cung cấp mức kiểm tra tối thiểu để đảm bảo không có bất kỳ cửa hậu nào khi sử dụng `MUTABLE`.
+Both `CALLCODE` and `SELFDESTRUCT` are considered deprecated. Consequently, only minimal checks are applied to these opcodes to ensure that no unintended bypass of `MUTABLE` constraints is possible.
 
-### `Option` có thể được mở rộng
+### Extensible Option Design
 
-Đây là mục tiêu thiết kế của mẫu `MutableSetList` nhằm tạo thuận lợi cho việc nâng cấp mà không làm hỏng các hợp đồng sử dụng mã lệnh `MUTABLE` trước đó và không tăng thêm đáng kể chi phí sử dụng về phía người dùng cuối.
+The `MutableSetList` structure is explicitly designed to be extensible. This allows new invariant types or state categories to be added in the future without breaking contracts that rely on earlier versions of the `MUTABLE` opcode, and without introducing significant additional gas costs.
 
-### Tham số `length` chỉ định kích thước tối đa
+### length as a Maximum Size Hint
 
-Do RLP có khả năng tự mô tả, việc thêm một tham số như `length` chỉ có một mục đích duy nhất là giúp máy khách nhanh chóng xác định kích thước tối đa của dữ liệu khi thực hiện giải mã `MutableSetList`.
+Since RLP encoding is self-describing, the length parameter serves solely as a hint for clients to quickly determine an upper bound on the data size when decoding a `MutableSetList`. It does not alter semantic interpretation.
 
-### Cho phép ghi đè Option
+### Allowing Option Overrides
 
-Điều này giúp `MUTABLE` giữ được tính linh hoạt và tránh tạo ra các lỗi không mong muốn khác khi có các thay đổi nhỏ trong thực thi.
+Allowing later options to override earlier ones preserves flexibility and reduces the likelihood of unexpected failures caused by minor execution changes.
 
-### Không có giới hạn ngưỡng
+### No Threshold Limits
 
-Việc thiết lập giới hạn ngưỡng tại các vị trí không được cho phép không mang lại lợi ích rõ ràng nào, trong khi đó tại những vị trí được cho phép vốn đã có khả năng lập trình giới hạn tốt nhờ các mẫu hợp đồng như `InvariantGuard`.
+Introducing threshold limits for disallowed state locations provides no clear benefit. For allowed locations, programmable limits can already be effectively enforced using contract-level patterns such as `InvariantGuard`.
 
-### Thêm chi phí phân tích cho `MUTABLE`
+### Additional Parsing Cost for MUTABLE
 
-Chi phí này giúp hỗ trợ máy khách phân tích RLP và quản lý các thiết lập bất biến trong suốt quá trình thực thi. Chi phí này tương đương với chi phí phân tích `JUMPDEST` trên `init_code` khi tạo hợp đồng.
+An additional gas cost is introduced to account for RLP parsing and invariant management throughout execution. This cost is comparable to the `JUMPDEST` analysis cost applied to init_code during contract creation.
 
-## Các vấn đề tương thích ngược
+## Backwards Compatibility
 
-### Thay đổi hành vi các mã lệnh
+### Opcode Behavior Changes
 
-Các mã lệnh liên quan đến trạng thái sẽ được điều chỉnh bởi mã lệnh `MUTABLE`, tác động mà nó gây ra tương tự với việc thực thi các mã lệnh này trong bối cảnh `STATICCALL`. Mặt khác tác động của mã lệnh này mang tính cục bộ khi nó chỉ hoạt động trong phạm vi giao dịch và do vậy không ảnh hưởng đến hành vi thực tế của các mã lệnh mà nó kiểm soát.
+State-affecting opcodes are constrained by `MUTABLE` in a manner analogous to their behavior under `STATICCALL`. These effects are strictly transaction-scoped and do not alter the intrinsic semantics of the opcodes outside the configured execution environment.
 
-### Tương thích ngược khi nâng cấp
+### Upgrade Compatibility
 
-Vì `MutableSetList` sử dụng `Option` để thiết lập bất biến, các loại bất biến hoặc điều khoản mới có thể được thêm vào cho mã lệnh `MUTABLE` trong tương lai mà không làm thay đổi hành vi của các hợp đồng sử dụng phiên bản cũ hơn.
+Because `MutableSetList` relies on extensible Option encoding, future additions to the invariant system do not change the behavior of contracts that use earlier versions of `MUTABLE`.
 
-## Các vấn đề an ninh
+## Security Considerations
 
-### Đánh đổi giữa an toàn và linh hoạt
+### Safety–Flexibility Tradeoff
 
-Để đạt được sự bảo vệ tốt nhất, hợp đồng phải chỉ định chính xác các vị trí mà nó cho phép thay đổi, đây là một công việc khó khăn với đối với hầu hết dApp. Do vậy EIP này cũng cho phép chúng bỏ qua các kiểm tra chính xác trên từng slot storage và transient storage nhằm đơn giản hóa luồng công việc cho dApp, điều này đòi hỏi giao diện ví hoặc dApp phải đánh giá hợp đồng mà người dùng dự định tương tác có an toàn hay không. Nhìn chung là có rủi ro cao hơn so với định vị chính xác nhưng có thể được bù đắp thông qua kiểm toán hợp đồng.
+For maximum protection, contracts must precisely specify all permitted state mutations. This is a non-trivial task for most dApps.
+Accordingly, this EIP allows dApps to omit fine-grained checks on individual storage and transient storage slots to simplify integration. In such cases, wallets or dApps are expected to assess whether the target contract is sufficiently safe for user interaction.
+While this approach carries higher risk than exact slot-level enforcement, the risk can be mitigated through rigorous contract auditing.
 
-### Cải thiện trình biên dịch
+### Compiler Support
 
-Các trình biên dịch cần tạo thuận lợi tốt nhất cho các lập trình viên trong việc truy cập vào trạng thái thông qua mã cấp cao. Trình biên dịch Solidity hiện tại vẫn chưa cho phép sử dụng các biến phức tạp cho transient storage, điều này hạn chế nghiêm trọng khả năng tiếp cận các cơ chế an toàn nâng cao. Sự phối hợp tốt giữa các bản nâng cấp và trình biên dịch có tác động không nhỏ đến sự an toàn trong thiết kế hợp đồng.
+Compilers should provide ergonomic high-level access to state under invariant constraints. At present, Solidity does not support complex transient storage variables, which significantly limits the usability of advanced safety mechanisms.
+Close coordination between protocol upgrades and compiler enhancements is therefore essential to fully realize the security benefits of this design.
 
-## Triển khai thử nghiệm
+## Test Implementations
 
-Sẽ thông báo sau
+To be announced.
 
-## Triển khai tham chiếu 
+## Reference Implementation
 
-Sẽ thông báo sau
+To be announced.
 
-## Bản quyền
+## Copyright
 
-Copyright and related rights waived via CC0.
+Copyright and related rights waived via CC0.
