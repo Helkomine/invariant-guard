@@ -136,7 +136,7 @@ import "@openzeppelin/contracts/utils/Address.sol";
 contract InvariantSimple is InvariantGuardInternal {
     address owner;
 
-    function selfDelegateCall(address target, bytes calldata data) public payable invariantStorage(_getSlot()) {
+    function safeDelegateCall(address target, bytes calldata data) public payable invariantStorage(_getSlot()) {
         Address.functionDelegateCall(target, data);
     }
 
