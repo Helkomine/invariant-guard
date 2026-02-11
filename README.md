@@ -190,8 +190,8 @@ All other aspects differ.
 
 `ReentrancyGuard`:
 
-- Introduces new state (older versions use storage).
-- Newer versions rely on transient storage, but still introduce local state mutation.
+- Introduces new state (older versions use `storage`).
+- Newer versions rely on `transient storage`, but still introduce local state mutation.
 - Has higher operational cost.
 - Is restricted in `static` execution contexts.
 
@@ -209,7 +209,7 @@ Most importantly:
 
 - `ReentrancyGuard` prevents reentrancy attacks.
 - `InvariantGuard` prevents unintended invariant violations.
-- 
+ 
 These are distinct security concerns. Developers must clearly understand their differences to avoid misuse.
 Combining both mechanisms is possible but should be done carefully, as their interaction may introduce unintended execution behavior.
 
