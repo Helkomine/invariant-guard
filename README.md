@@ -50,12 +50,16 @@ There are five `Invariant-Guard` files in total:
 
 ### Core Mechanism
 
-Invariant-Guard works by:
-Taking snapshots of selected values before execution
-Executing the target logic
-Performing post-execution validation
+`Invariant-Guard` works by:
+
+- Taking snapshots of selected values before execution
+- Executing the target logic
+- Performing post-execution validation
+
 This design is conceptually similar to the pattern used in flash loan validation.
-Invariant Classification
+
+### Invariant Classification
+
 Based on how value differences are evaluated, invariants are divided into two main categories:
 Absolute Invariants
 The value must remain exactly the same before and after execution.
@@ -67,6 +71,17 @@ The value may change, but only within a predefined threshold configuration.
 Based on the nature of state differences, invariants are further divided into eight groups.
 Note:
 Example implementations are not yet provided, so usage guidance for certain cases—especially Storage and Transient Storage—will be refined in future revisions.
+
+### Phân biệt với ReentrancyGuard
+
+Khi quan sát thiết lập logic của `InvariantGuard` rất dễ gợi nhớ đến `ReentrancyGuard` của OpenZeppelin. Tuy nhiên luồng thực thi của chúng có điểm khác biệt nhau:
+
+- `ReentrancyGuard` sử dụng mô hình `Check - Write - Execute - Write`.
+- `InvariantGuard` sử dụng mô hình `Read - Execute - Read - Check`.
+
+Dễ nhận thấy điểm giao nhau duy nhất của cả hai là cho phép đặt các thực thi cần bảo vệ vào giữa. Phần còn lại đều khác biệt:
+
+- `ReentrancyGuard` luôn tạo ra trạng thái mới (trong phiên bản cũ sử dụng storage) hoặc có tác động đến trạng thái (trong phiên bản mới sử dụng transient storage)
 
 ## Security Considerations
 
